@@ -1,0 +1,12 @@
+{
+  "app":"Monstrinhos",
+  "package_id":"com.caeless.monstrinhos",
+  "version_code":4000,
+  "version_name":"4.0.0-build-ready",
+  "save_namespace":"monstrinhos_save_v1",
+  "campaign_stages":30,
+  "boss_stages":[5,10,15,20,25,30],
+  "monster_count":32,
+  "real_ads_enabled":false,
+  "real_billing_enabled":false
+}
