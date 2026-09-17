@@ -7,7 +7,7 @@ android {
         applicationId 'com.caeless.monstrinhos'
         minSdk 26
         targetSdk 35
-        versionCode 4100
-        versionName '4.1.0-visual'
+        versionCode 4110
+        versionName '4.1.1-visual-controls'
     }
 }
