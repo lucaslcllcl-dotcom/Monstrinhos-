@@ -1,8 +1,8 @@
 {
   "app":"Monstrinhos",
   "package_id":"com.caeless.monstrinhos",
-  "version_code":4170,
-  "version_name":"4.1.7-achievements",
+  "version_code":4180,
+  "version_name":"4.1.8-achievement-engine",
   "save_namespace":"monstrinhos_save_v1",
   "save_schema":2,
   "campaign_stages":30,
