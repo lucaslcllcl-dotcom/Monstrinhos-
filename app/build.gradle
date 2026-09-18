@@ -7,7 +7,7 @@ android {
         applicationId 'com.caeless.monstrinhos'
         minSdk 26
         targetSdk 35
-        versionCode 4180
-        versionName '4.1.8-achievement-engine'
+        versionCode 4190
+        versionName '4.1.9-achievement-progress'
     }
 }
