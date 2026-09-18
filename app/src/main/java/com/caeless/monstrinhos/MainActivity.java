@@ -20,7 +20,10 @@ public final class MainActivity extends Activity {
         super.onSaveInstanceState(out);
     }
     @Override protected void onPause(){
-        if(gameView!=null) gameView.persistProgress();
+        if(gameView!=null){
+            gameView.evaluateAchievements();
+            gameView.persistProgress();
+        }
         super.onPause();
     }
 }
