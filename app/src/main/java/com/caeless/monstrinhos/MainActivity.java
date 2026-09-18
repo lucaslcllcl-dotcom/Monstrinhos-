@@ -15,6 +15,13 @@ public final class MainActivity extends Activity {
         if(b!=null) gameView.restoreSession(b);
         setContentView(gameView);
     }
+    @Override protected void onResume(){
+        super.onResume();
+        AchievementSystem.evaluate(this);
+        if(gameView!=null) gameView.post(new Runnable(){
+            @Override public void run(){ AchievementCelebrationController.showNext(MainActivity.this, gameView); }
+        });
+    }
     @Override protected void onSaveInstanceState(Bundle out){
         if(gameView!=null) gameView.saveSession(out);
         super.onSaveInstanceState(out);
