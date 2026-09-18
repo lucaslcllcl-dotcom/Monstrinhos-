@@ -1,14 +1,15 @@
 {
   "app":"Monstrinhos",
   "package_id":"com.caeless.monstrinhos",
-  "version_code":4160,
-  "version_name":"4.1.6-progression-sync",
+  "version_code":4170,
+  "version_name":"4.1.7-achievements",
   "save_namespace":"monstrinhos_save_v1",
   "save_schema":2,
   "campaign_stages":30,
   "boss_stages":[5,10,15,20,25,30],
   "monster_count":32,
   "world_count":3,
+  "achievement_count":8,
   "real_ads_enabled":false,
   "real_billing_enabled":false
 }
