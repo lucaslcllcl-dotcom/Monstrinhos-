@@ -7,7 +7,7 @@ android {
         applicationId 'com.caeless.monstrinhos'
         minSdk 26
         targetSdk 35
-        versionCode 4300
-        versionName '4.3.0-collection-reward-status'
+        versionCode 4310
+        versionName '4.3.1-collection-reward-claim'
     }
 }
