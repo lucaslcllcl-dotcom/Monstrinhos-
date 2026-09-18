@@ -1,8 +1,8 @@
 {
   "app":"Monstrinhos",
   "package_id":"com.caeless.monstrinhos",
-  "version_code":4260,
-  "version_name":"4.2.6-collection-progression",
+  "version_code":4270,
+  "version_name":"4.2.7-album-cards",
   "save_namespace":"monstrinhos_save_v1",
   "save_schema":2,
   "campaign_stages":30,
@@ -20,6 +20,8 @@
   "collection_total":32,
   "collection_rare_count":8,
   "collection_accessibility_summary":true,
+  "collection_card_model":true,
+  "collection_page_accessibility":true,
   "real_ads_enabled":false,
   "real_billing_enabled":false
 }
