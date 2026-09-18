@@ -7,7 +7,7 @@ android {
         applicationId 'com.caeless.monstrinhos'
         minSdk 26
         targetSdk 35
-        versionCode 4350
-        versionName '4.3.5-album-artwork'
+        versionCode 4360
+        versionName '4.3.6-album-card-polish'
     }
 }
