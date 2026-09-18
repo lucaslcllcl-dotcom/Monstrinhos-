@@ -1,8 +1,8 @@
 {
   "app":"Monstrinhos",
   "package_id":"com.caeless.monstrinhos",
-  "version_code":4340,
-  "version_name":"4.3.4-album-visual-polish",
+  "version_code":4360,
+  "version_name":"4.3.6-album-card-polish",
   "save_namespace":"monstrinhos_save_v1",
   "save_schema":2,
   "campaign_stages":30,
@@ -34,6 +34,10 @@
   "collection_reward_card_accessibility":true,
   "collection_reward_ui":true,
   "album_reward_claim_button":true,
+  "album_artwork_layer":true,
+  "album_card_rarity_badge":true,
+  "album_card_favorite_badge":true,
+  "album_card_locked_silhouette":true,
   "real_ads_enabled":false,
   "real_billing_enabled":false
 }
