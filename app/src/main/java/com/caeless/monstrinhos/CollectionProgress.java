@@ -20,6 +20,20 @@ final class CollectionProgress {
         }
     }
 
+    static final class Card {
+        final int index;
+        final boolean owned, rare;
+        final String name;
+        Card(int index, boolean owned){
+            this.index=index; this.owned=owned; this.rare=index>=RARE_START;
+            this.name=owned ? "Monstrinho "+(index+1) : "Monstrinho misterioso";
+        }
+        String accessibilityText(){
+            if(!owned) return "Monstrinho "+(index+1)+" ainda não encontrado"+(rare?", raro.":".");
+            return name+" encontrado"+(rare?", raro.":".");
+        }
+    }
+
     private CollectionProgress(){}
 
     static Snapshot from(GameState state){
@@ -31,6 +45,21 @@ final class CollectionProgress {
             if(i>=RARE_START && has) rare++;
         }
         return new Snapshot(owned,rare,next);
+    }
+
+    static Card[] page(GameState state,int page,int pageSize){
+        pageSize=Math.max(1,pageSize); page=clampPage(page,pageSize);
+        int start=page*pageSize, end=Math.min(TOTAL,start+pageSize);
+        Card[] cards=new Card[end-start];
+        for(int i=start;i<end;i++) cards[i-start]=new Card(i,(state.ownedMask&(1L<<i))!=0);
+        return cards;
+    }
+
+    static String pageAccessibilityText(GameState state,int page,int pageSize){
+        Snapshot summary=from(state); Card[] cards=page(state,page,pageSize);
+        StringBuilder out=new StringBuilder(summary.accessibilityText()).append(' ');
+        for(Card card:cards) out.append(card.accessibilityText()).append(' ');
+        return out.toString();
     }
 
     static int pageCount(int pageSize){
