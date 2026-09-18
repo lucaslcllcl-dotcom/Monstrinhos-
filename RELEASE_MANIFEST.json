@@ -1,8 +1,8 @@
 {
   "app":"Monstrinhos",
   "package_id":"com.caeless.monstrinhos",
-  "version_code":4310,
-  "version_name":"4.3.1-collection-reward-claim",
+  "version_code":4320,
+  "version_name":"4.3.2-collection-reward-catalog",
   "save_namespace":"monstrinhos_save_v1",
   "save_schema":2,
   "campaign_stages":30,
@@ -30,6 +30,8 @@
   "collection_reward_accessibility":true,
   "collection_reward_claim_model":true,
   "collection_reward_claim_feedback":true,
+  "collection_reward_catalog":true,
+  "collection_reward_card_accessibility":true,
   "real_ads_enabled":false,
   "real_billing_enabled":false
 }
