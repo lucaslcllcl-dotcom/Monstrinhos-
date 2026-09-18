@@ -17,12 +17,18 @@ final class AlbumVisuals {
     static void drawCard(Canvas c, Paint p, float x, float y, float radius, int index,
                          boolean owned, boolean rare, boolean favorite) {
         p.setStyle(Paint.Style.FILL);
-        p.setColor(owned ? 0xffffffff : 0xffdfe5ec);
+        p.setShadowLayer(radius*.10f, 0, radius*.06f, 0x44000000);
+        p.setColor(owned ? 0xfffffff8 : 0xffdfe5ec);
         c.drawRoundRect(x-radius, y-radius, x+radius, y+radius, radius*.28f, radius*.28f, p);
+        p.clearShadowLayer();
         p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(Math.max(2f,radius*.07f));
         p.setColor(rare ? 0xffffc437 : 0x44333a66);
         c.drawRoundRect(x-radius, y-radius, x+radius, y+radius, radius*.28f, radius*.28f, p);
         p.setStyle(Paint.Style.FILL);
+        if (rare) {
+            p.setColor(0xffffc437); p.setTextAlign(Paint.Align.CENTER); p.setTextSize(radius*.28f);
+            c.drawText("★ RARO", x, y-radius*.70f, p); p.setTextAlign(Paint.Align.LEFT);
+        }
         if (!owned) {
             p.setColor(0xff9aa3ad); c.drawCircle(x,y,radius*.38f,p);
             p.setColor(Color.WHITE); p.setTextAlign(Paint.Align.CENTER); p.setTextSize(radius*.62f);
@@ -34,6 +40,10 @@ final class AlbumVisuals {
         ear=new Path(); ear.moveTo(x+radius*.34f,y-radius*.25f); ear.lineTo(x+radius*.48f,y-radius*.64f); ear.lineTo(x+radius*.10f,y-radius*.38f); ear.close(); c.drawPath(ear,p);
         p.setColor(Color.WHITE); c.drawCircle(x-radius*.17f,y-radius*.05f,radius*.11f,p); c.drawCircle(x+radius*.17f,y-radius*.05f,radius*.11f,p);
         p.setColor(0xff23265c); c.drawCircle(x-radius*.17f,y-radius*.05f,radius*.05f,p); c.drawCircle(x+radius*.17f,y-radius*.05f,radius*.05f,p);
+        p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(Math.max(2f,radius*.045f));
+        c.drawArc(x-radius*.18f,y+radius*.12f,x+radius*.18f,y+radius*.34f,8,164,false,p); p.setStyle(Paint.Style.FILL);
+        p.setTextAlign(Paint.Align.CENTER); p.setTextSize(radius*.25f); p.setColor(0xff23265c);
+        c.drawText("#"+(index+1),x,y+radius*.78f,p); p.setTextAlign(Paint.Align.LEFT);
         if (favorite) { p.setColor(0xffff5f91); p.setTextAlign(Paint.Align.CENTER); p.setTextSize(radius*.42f); c.drawText("♥",x+radius*.62f,y-radius*.55f,p); p.setTextAlign(Paint.Align.LEFT); }
     }
     private AlbumVisuals() {}
