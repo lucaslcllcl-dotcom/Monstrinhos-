@@ -1,8 +1,8 @@
 {
   "app":"Monstrinhos",
   "package_id":"com.caeless.monstrinhos",
-  "version_code":4290,
-  "version_name":"4.2.9-collection-rewards",
+  "version_code":4300,
+  "version_name":"4.3.0-collection-reward-status",
   "save_namespace":"monstrinhos_save_v1",
   "save_schema":2,
   "campaign_stages":30,
@@ -26,6 +26,8 @@
   "collection_milestone_progress":true,
   "collection_milestone_rewards":true,
   "collection_reward_tiers":5,
+  "collection_reward_status_model":true,
+  "collection_reward_accessibility":true,
   "real_ads_enabled":false,
   "real_billing_enabled":false
 }
