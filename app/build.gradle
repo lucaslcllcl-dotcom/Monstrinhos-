@@ -7,7 +7,7 @@ android {
         applicationId 'com.caeless.monstrinhos'
         minSdk 26
         targetSdk 35
-        versionCode 4370
-        versionName '4.3.7-album-integration'
+        versionCode 4380
+        versionName '4.3.8-visual-test'
     }
 }
