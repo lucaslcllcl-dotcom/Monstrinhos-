@@ -6,6 +6,11 @@ import android.graphics.Paint;
 /** Responsive visual grid for the 32-creature collection. Keeps drawing logic out of MonstrinhosView. */
 final class AlbumGridVisuals {
     static void draw(Canvas canvas, Paint paint, float width, float height, int page, long ownedMask) {
+        drawPage(canvas, paint, width, height, page, ownedMask, -1);
+    }
+
+    /** Draws one 4x4 album page and honors the persisted favorite monster when available. */
+    static void drawPage(Canvas canvas, Paint paint, float width, float height, int page, long ownedMask, int favoriteMonster) {
         final int start = Math.max(0, Math.min(1, page)) * 16;
         final float left = width * .055f;
         final float right = width * .945f;
@@ -22,7 +27,7 @@ final class AlbumGridVisuals {
             float y = top + cellH * (row + .5f);
             boolean owned = (ownedMask & (1L << index)) != 0L;
             boolean rare = index == 7 || index == 15 || index == 23 || index == 31;
-            boolean favorite = owned && index == 0;
+            boolean favorite = owned && index == favoriteMonster;
             AlbumVisuals.drawCard(canvas, paint, x, y, radius, index, owned, rare, favorite);
         }
     }
