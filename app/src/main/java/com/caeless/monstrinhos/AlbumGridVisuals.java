@@ -11,6 +11,7 @@ final class AlbumGridVisuals {
 
     /** Draws one 4x4 album page and honors the persisted favorite monster when available. */
     static void drawPage(Canvas canvas, Paint paint, float width, float height, int page, long ownedMask, int favoriteMonster) {
+        if (canvas == null || paint == null || width <= 0f || height <= 0f) return;
         final int start = safePage(page) * 16;
         final float left = width * .055f;
         final float right = width * .945f;
@@ -34,6 +35,7 @@ final class AlbumGridVisuals {
 
     /** Returns the zero-based monster index under a touch, or -1 outside the 4x4 card grid. */
     static int hitTest(float width, float height, int page, float touchX, float touchY) {
+        if (width <= 0f || height <= 0f || Float.isNaN(touchX) || Float.isNaN(touchY)) return -1;
         final float left = width * .055f;
         final float right = width * .945f;
         final float top = height * .175f;
@@ -41,8 +43,8 @@ final class AlbumGridVisuals {
         if (touchX < left || touchX >= right || touchY < top || touchY >= bottom) return -1;
         final float cellW = (right - left) / 4f;
         final float cellH = (bottom - top) / 4f;
-        int col = Math.min(3, (int)((touchX - left) / cellW));
-        int row = Math.min(3, (int)((touchY - top) / cellH));
+        int col = Math.min(3, Math.max(0, (int)((touchX - left) / cellW)));
+        int row = Math.min(3, Math.max(0, (int)((touchY - top) / cellH)));
         return safePage(page) * 16 + row * 4 + col;
     }
 
