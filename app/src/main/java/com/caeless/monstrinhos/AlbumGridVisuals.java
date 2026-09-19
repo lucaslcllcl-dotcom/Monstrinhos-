@@ -26,25 +26,27 @@ final class AlbumGridVisuals {
             float x = left + cellW * (col + .5f);
             float y = top + cellH * (row + .5f);
             boolean owned = (ownedMask & (1L << index)) != 0L;
-            boolean rare = index == 7 || index == 15 || index == 23 || index == 31;
+            boolean rare = isRare(index);
             boolean favorite = owned && index == favoriteMonster;
             AlbumVisuals.drawCard(canvas, paint, x, y, radius, index, owned, rare, favorite);
         }
     }
 
     static String accessibilitySummary(int page, long ownedMask) {
-        int start = Math.max(0, Math.min(1, page)) * 16;
+        int safePage = Math.max(0, Math.min(1, page));
+        int start = safePage * 16;
         int owned = 0;
         int rareOwned = 0;
         for (int i = 0; i < 16; i++) {
             int index = start + i;
             if ((ownedMask & (1L << index)) != 0L) {
                 owned++;
-                if (index == 7 || index == 15 || index == 23 || index == 31) rareOwned++;
+                if (isRare(index)) rareOwned++;
             }
         }
-        return "Página " + (page + 1) + " do álbum. " + owned + " de 16 monstrinhos descobertos nesta página. " + rareOwned + " raros descobertos.";
+        return "Página " + (safePage + 1) + " do álbum. " + owned + " de 16 monstrinhos descobertos nesta página. " + rareOwned + " raros descobertos.";
     }
 
+    private static boolean isRare(int index) { return index >= 24 && index < 32; }
     private AlbumGridVisuals() {}
 }
