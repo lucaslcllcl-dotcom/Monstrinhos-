@@ -1,0 +1,66 @@
+name: Build Monstrinhos v6.4.0
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-v64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: ''
+      - name: Install Android SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Decode source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/monstrinhos-v64"
+          base64 -d ci/Monstrinhos_v6.4.0_source.b64 > "$RUNNER_TEMP/Monstrinhos_v6.4.0_source.zip"
+          unzip -q "$RUNNER_TEMP/Monstrinhos_v6.4.0_source.zip" -d "$RUNNER_TEMP/monstrinhos-v64"
+          cd "$RUNNER_TEMP/monstrinhos-v64"
+          python3 tools/verify_release.py
+      - name: Build APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/monstrinhos-v64"
+          gradle :app:assembleDebug --stacktrace
+      - name: Verify APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/monstrinhos-v64"
+          APK="$(find app/build/outputs/apk/debug -name '*.apk' -type f | head -n1)"
+          test -n "$APK"
+          BT="$ANDROID_HOME/build-tools/35.0.0"
+          "$BT/aapt" dump badging "$APK" | tee "$RUNNER_TEMP/badging.txt"
+          grep -F "name='com.caeless.monstrinhos'" "$RUNNER_TEMP/badging.txt"
+          grep -F "versionCode='6400'" "$RUNNER_TEMP/badging.txt"
+          grep -F "versionName='6.4.0'" "$RUNNER_TEMP/badging.txt"
+          grep -F "targetSdkVersion:'36'" "$RUNNER_TEMP/badging.txt"
+          "$BT/zipalign" -c -v 4 "$APK"
+          "$BT/apksigner" verify --verbose --print-certs "$APK"
+          unzip -t "$APK"
+          mkdir -p "$RUNNER_TEMP/release-output"
+          cp "$APK" "$RUNNER_TEMP/release-output/Monstrinhos_v6.4.0_debug.apk"
+          cp "$RUNNER_TEMP/badging.txt" "$RUNNER_TEMP/release-output/BADGING.txt"
+          sha256sum "$RUNNER_TEMP/release-output/Monstrinhos_v6.4.0_debug.apk" > "$RUNNER_TEMP/release-output/SHA256SUMS.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Monstrinhos-v6.4.0-debug
+          path: ${{ runner.temp }}/release-output/*
+          retention-days: 7
