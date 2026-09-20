@@ -5,7 +5,7 @@ import android.view.View;
 
 /** Bridges casinha actions to the shared timed/accessibility reaction system. */
 public final class HouseReactionEvents {
-    private final ReactionController reactions;
+    private final ReactionController reactions;\n    private final View host;
 
     public HouseReactionEvents(View host) {
         reactions = new ReactionController();
