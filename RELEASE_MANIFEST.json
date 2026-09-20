@@ -1,8 +1,8 @@
 {
   "app": "Monstrinhos",
   "package_id": "com.caeless.monstrinhos",
-  "version_code": 5100,
-  "version_name": "5.1.0",
+  "version_code": 5200,
+  "version_name": "5.2.0",
   "save_namespace": "monstrinhos_save_v1",
   "save_schema": 2,
   "campaign_stages": 30,
@@ -82,9 +82,11 @@
   "compile_sdk": 36,
   "play_store_candidate": true,
   "production_notes": [
+    "Approved home reference artwork integrated directly into the interactive screen",
+    "Approved World 1 map reference artwork integrated directly with aligned stage hitboxes",
+    "Remaining screens retain the unified glossy Monstrinhos visual system",
     "Google Play upload uses signed AAB",
     "Release APK is provided for device smoke testing",
-    "Home layout safe-area polish and branded launcher icon",
     "Google Play Billing store integrated",
     "Rewarded ads and capped interstitials integrated with child-directed G-rated configuration"
   ],
