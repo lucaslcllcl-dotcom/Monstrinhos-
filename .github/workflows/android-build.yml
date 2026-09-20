@@ -1,8 +1,8 @@
-name: Android Installable Build
+name: Android Production Build
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,43 +16,71 @@ jobs:
         with:
           packages: ''
       - name: Install required Android SDK
-        run: yes | sdkmanager --licenses >/dev/null || true; sdkmanager 'platform-tools' 'platforms;android-35' 'build-tools;35.0.0'
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;35.0.0'
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.9'
+          gradle-version: '8.11.1'
+
       - name: Verify source identity
         run: python3 tools/verify_release.py
-      - name: Build debug APK
-        run: |
-          rm -rf "$HOME/.android/debug.keystore"
-          gradle :app:assembleDebug --stacktrace
-      - name: Verify generated APK
+
+      - name: Create one-time Play upload key
         shell: bash
         run: |
           set -euo pipefail
-          APK="$(find app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -type f | head -n 1)"
+          mkdir -p "$RUNNER_TEMP/monstrinhos-signing"
+          PASS="$(openssl rand -base64 36 | tr -d '\n')"
+          KEYSTORE="$RUNNER_TEMP/monstrinhos-signing/monstrinhos-upload.jks"
+          keytool -genkeypair -v             -keystore "$KEYSTORE"             -storepass "$PASS"             -keypass "$PASS"             -alias monstrinhos             -keyalg RSA -keysize 4096 -validity 10000             -dname "CN=Caeless Studios, OU=Mobile, O=Caeless Studios, C=BR"
+          printf '%s' "$PASS" > "$RUNNER_TEMP/monstrinhos-signing/KEYSTORE_PASSWORD.txt"
+          echo "MONSTRINHOS_KEYSTORE=$KEYSTORE" >> "$GITHUB_ENV"
+          echo "MONSTRINHOS_STORE_PASSWORD=$PASS" >> "$GITHUB_ENV"
+          echo "MONSTRINHOS_KEY_PASSWORD=$PASS" >> "$GITHUB_ENV"
+          echo "MONSTRINHOS_KEY_ALIAS=monstrinhos" >> "$GITHUB_ENV"
+
+      - name: Build signed release APK and AAB
+        run: gradle :app:assembleRelease :app:bundleRelease --stacktrace
+
+      - name: Verify production artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -type f | head -n 1)"
+          AAB="$(find app/build/outputs/bundle/release -maxdepth 1 -name '*.aab' -type f | head -n 1)"
           test -n "$APK"
+          test -n "$AAB"
           BT="$ANDROID_HOME/build-tools/35.0.0"
           BADGING="$("$BT/aapt" dump badging "$APK" | head -n 1)"
           echo "$BADGING"
           echo "$BADGING" | grep -F "name='com.caeless.monstrinhos'"
-          echo "$BADGING" | grep -F "versionCode='5001'"
-          echo "$BADGING" | grep -F "versionName='5.0.0-rc2-test'"
+          echo "$BADGING" | grep -F "versionCode='5002'"
+          echo "$BADGING" | grep -F "versionName='1.0.0'"
+          echo "$BADGING" | grep -F "targetSdkVersion:'36'"
           unzip -t "$APK"
+          unzip -t "$AAB"
           "$BT/zipalign" -c -v 4 "$APK"
           "$BT/apksigner" verify --verbose --print-certs "$APK"
+          jarsigner -verify -verbose -certs "$AAB" >/dev/null
           if unzip -l "$APK" | grep -Eq ' lib/.*\.so$'; then
             echo "Native libraries detected:"
             unzip -l "$APK" | grep -E ' lib/.*\.so$'
           else
-            echo "NO_NATIVE_LIBS: APK is Java/ART-only and has no ABI-specific native libraries."
+            echo "NO_NATIVE_LIBS: Java/ART-only; no ABI-specific native libraries."
           fi
-          APK_SIZE="$(stat -c%s "$APK")"
-          test "$APK_SIZE" -gt 10000
-          echo "APK_SIZE_BYTES=$APK_SIZE"
-          sha256sum "$APK" | tee app/build/outputs/apk/debug/SHA256SUMS.txt
+          mkdir -p release-output
+          cp "$APK" release-output/Monstrinhos_v1.0.0_release.apk
+          cp "$AAB" release-output/Monstrinhos_v1.0.0_PlayStore.aab
+          cp "$RUNNER_TEMP/monstrinhos-signing/monstrinhos-upload.jks" release-output/monstrinhos-upload.jks
+          cp "$RUNNER_TEMP/monstrinhos-signing/KEYSTORE_PASSWORD.txt" release-output/KEYSTORE_PASSWORD.txt
+          printf '%s\n' 'Key alias: monstrinhos' > release-output/SIGNING_README.txt
+          printf '%s\n' 'Keep monstrinhos-upload.jks and KEYSTORE_PASSWORD.txt private and backed up. They are needed for future Play uploads.' >> release-output/SIGNING_README.txt
+          sha256sum release-output/Monstrinhos_v1.0.0_release.apk release-output/Monstrinhos_v1.0.0_PlayStore.aab release-output/monstrinhos-upload.jks | tee release-output/SHA256SUMS.txt
+
       - uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: Monstrinhos-installable-apk
-          path: app/build/outputs/apk/debug/*
+          name: Monstrinhos-v1.0.0-PlayStore-release
+          path: release-output/*
+          retention-days: 30
