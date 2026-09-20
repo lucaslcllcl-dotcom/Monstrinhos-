@@ -1,0 +1,53 @@
+name: Android Installable Test
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: ''
+      - name: Install Android SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Verify source
+        run: python3 tools/verify_release.py
+      - name: Build side-by-side debug APK
+        run: gradle :app:assembleDebug --stacktrace
+      - name: Verify side-by-side APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -type f | head -n 1)"
+          test -n "$APK"
+          BT="$ANDROID_HOME/build-tools/35.0.0"
+          BADGING="$("$BT/aapt" dump badging "$APK" | head -n 1)"
+          echo "$BADGING"
+          echo "$BADGING" | grep -F "name='com.caeless.monstrinhos.rc1test'"
+          echo "$BADGING" | grep -F "versionCode='5100'"
+          echo "$BADGING" | grep -F "versionName='5.1.0-test'"
+          unzip -t "$APK"
+          "$BT/zipalign" -c -v 4 "$APK"
+          "$BT/apksigner" verify --verbose --print-certs "$APK"
+          mkdir -p test-output
+          cp "$APK" test-output/Monstrinhos_v5.1.0_parallel_test.apk
+          sha256sum test-output/Monstrinhos_v5.1.0_parallel_test.apk | tee test-output/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: Monstrinhos-v5.1.0-parallel-test
+          path: test-output/*
+          retention-days: 30
