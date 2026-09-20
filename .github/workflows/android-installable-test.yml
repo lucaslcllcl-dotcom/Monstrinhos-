@@ -37,17 +37,17 @@ jobs:
           BADGING="$("$BT/aapt" dump badging "$APK" | head -n 1)"
           echo "$BADGING"
           echo "$BADGING" | grep -F "name='com.caeless.monstrinhos.rc1test'"
-          echo "$BADGING" | grep -F "versionCode='5100'"
-          echo "$BADGING" | grep -F "versionName='5.1.0-test'"
+          echo "$BADGING" | grep -F "versionCode='5200'"
+          echo "$BADGING" | grep -F "versionName='5.2.0-test'"
           unzip -t "$APK"
           "$BT/zipalign" -c -v 4 "$APK"
           "$BT/apksigner" verify --verbose --print-certs "$APK"
           mkdir -p test-output
-          cp "$APK" test-output/Monstrinhos_v5.1.0_parallel_test.apk
-          sha256sum test-output/Monstrinhos_v5.1.0_parallel_test.apk | tee test-output/SHA256SUMS.txt
+          cp "$APK" test-output/Monstrinhos_v5.2.0_parallel_test.apk
+          sha256sum test-output/Monstrinhos_v5.2.0_parallel_test.apk | tee test-output/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: Monstrinhos-v5.1.0-parallel-test
+          name: Monstrinhos-v5.2.0-parallel-test
           path: test-output/*
           retention-days: 30
