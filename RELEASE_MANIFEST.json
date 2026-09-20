@@ -1,8 +1,8 @@
 {
   "app": "Monstrinhos",
   "package_id": "com.caeless.monstrinhos",
-  "version_code": 5002,
-  "version_name": "5.0.0",
+  "version_code": 5003,
+  "version_name": "5.0.1",
   "save_namespace": "monstrinhos_save_v1",
   "save_schema": 2,
   "campaign_stages": 30,
@@ -84,6 +84,7 @@
   "production_notes": [
     "Google Play upload uses signed AAB",
     "Release APK is provided for device smoke testing",
-    "No ads or billing SDK enabled"
+    "No ads or billing SDK enabled",
+    "Home layout safe-area polish and branded launcher icon"
   ]
 }
