@@ -8,7 +8,7 @@ public final class HouseReactionEvents {
     private final ReactionController reactions;
 
     public HouseReactionEvents(View host) {
-        reactions = new ReactionController(host);
+        reactions = new ReactionController();
     }
 
     /** Performs care and reports the actual persisted result. */
@@ -17,13 +17,13 @@ public final class HouseReactionEvents {
         int beforeLevel = state.houseLevel;
         boolean ok = state.careAtHouse(context);
         if (!ok) {
-            reactions.show("Vamos tentar o carinho outra vez! 💖");
+            reactions.show(host, "Vamos tentar o carinho outra vez! 💖", state.accessibilityAnnouncements==1);
             return false;
         }
         if (state.houseLevel > beforeLevel) {
-            reactions.show("Carinho especial! A casinha evoluiu! ✨");
+            reactions.show(host, "Carinho especial! A casinha evoluiu! ✨", state.accessibilityAnnouncements==1);
         } else {
-            reactions.show("Carinho recebido! Seu monstrinho ficou feliz! 💖");
+            reactions.show(host, "Carinho recebido! Seu monstrinho ficou feliz! 💖", state.accessibilityAnnouncements==1);
         }
         return true;
     }
@@ -32,30 +32,26 @@ public final class HouseReactionEvents {
     public boolean evolve(Context context, GameState state) {
         if (context == null || state == null) return false;
         if (state.houseLevel >= 5) {
-            reactions.show("Sua casinha já chegou ao nível máximo! 👑");
+            reactions.show(host, "Sua casinha já chegou ao nível máximo! 👑", state.accessibilityAnnouncements==1);
             return false;
         }
         boolean ok = state.upgradeHouse(context);
-        reactions.show(ok
-                ? "Evolução concluída! A casinha ficou ainda mais especial! ✨"
-                : "Junte mais moedas para evoluir a casinha! 🪙");
+        reactions.show(host, ok ? "Evolução concluída! A casinha ficou ainda mais especial! ✨" : "Junte mais moedas para evoluir a casinha! 🪙", state.accessibilityAnnouncements==1);
         return ok;
     }
 
     /** Selects or buys a decor and reports whether the persisted action succeeded. */
     public boolean selectOrBuyDecor(Context context, GameState state, int decor) {
         if (context == null || state == null || decor < 0 || decor > 3) {
-            reactions.show("Essa decoração não está disponível. ⭐");
+            reactions.show(host, "Essa decoração não está disponível. ⭐", state.accessibilityAnnouncements==1);
             return false;
         }
         boolean alreadyOwned = state.hasDecor(decor);
         boolean ok = state.selectOrBuyDecor(context, decor);
         if (ok) {
-            reactions.show(alreadyOwned
-                    ? "Tema da casinha escolhido! 🎨"
-                    : "Nova decoração liberada e escolhida! 🎉");
+            reactions.show(host, alreadyOwned ? "Tema da casinha escolhido! 🎨" : "Nova decoração liberada e escolhida! 🎉", state.accessibilityAnnouncements==1);
         } else {
-            reactions.show("Junte mais moedas para liberar essa decoração! 🪙");
+            reactions.show(host, "Junte mais moedas para liberar essa decoração! 🪙", state.accessibilityAnnouncements==1);
         }
         return ok;
     }
@@ -66,6 +62,6 @@ public final class HouseReactionEvents {
     }
 
     public void clear() {
-        reactions.clear();
+        reactions.clear(null);
     }
 }
