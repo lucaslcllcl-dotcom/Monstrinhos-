@@ -8,14 +8,20 @@ android {
         applicationId 'com.caeless.monstrinhos'
         minSdk 26
         targetSdk 36
-        versionCode 5201
-        versionName '5.2.1'
+        versionCode 5202
+        versionName '5.2.2'
         manifestPlaceholders = [ADMOB_APP_ID: (System.getenv('ADMOB_APP_ID') ?: 'ca-app-pub-3940256099942544~3347511713')]
         resValue 'string', 'admob_rewarded_id', '"' + (System.getenv('ADMOB_REWARDED_ID') ?: 'ca-app-pub-3940256099942544/5224354917') + '"'
         resValue 'string', 'admob_interstitial_id', '"' + (System.getenv('ADMOB_INTERSTITIAL_ID') ?: 'ca-app-pub-3940256099942544/1033173712') + '"'
     }
 
     signingConfigs {
+        debugStable {
+            storeFile file('keystores/monstrinhos-test.jks')
+            storePassword 'monstrinhos-test-only-2026'
+            keyAlias 'monstrinhos-test'
+            keyPassword 'monstrinhos-test-only-2026'
+        }
         release {
             def ks = System.getenv('MONSTRINHOS_KEYSTORE')
             if (ks != null && !ks.isEmpty()) {
@@ -37,8 +43,9 @@ android {
     }
     buildTypes {
         debug {
-            applicationIdSuffix '.rc1test'
+            applicationIdSuffix '.visualtest'
             versionNameSuffix '-test'
+            signingConfig signingConfigs.debugStable
         }
     }
 }
