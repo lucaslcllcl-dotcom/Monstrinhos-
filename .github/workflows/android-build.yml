@@ -59,8 +59,8 @@ jobs:
           BADGING="$("$BT/aapt" dump badging "$APK")"
           echo "$BADGING" | head -n 8
           echo "$BADGING" | grep -F "name='com.caeless.monstrinhos'"
-          echo "$BADGING" | grep -F "versionCode='5200'"
-          echo "$BADGING" | grep -F "versionName='5.2.0'"
+          echo "$BADGING" | grep -F "versionCode='5201'"
+          echo "$BADGING" | grep -F "versionName='5.2.1'"
           echo "$BADGING" | grep -F "targetSdkVersion:'36'"
           unzip -t "$APK"
           unzip -t "$AAB"
@@ -74,17 +74,17 @@ jobs:
             echo "NO_NATIVE_LIBS: Java/ART-only; no ABI-specific native libraries."
           fi
           mkdir -p release-output
-          cp "$APK" release-output/Monstrinhos_v5.2.0_release.apk
-          cp "$AAB" release-output/Monstrinhos_v5.2.0_PlayStore.aab
+          cp "$APK" release-output/Monstrinhos_v5.2.1_release.apk
+          cp "$AAB" release-output/Monstrinhos_v5.2.1_PlayStore.aab
           cp "$RUNNER_TEMP/monstrinhos-signing/monstrinhos-upload.jks" release-output/monstrinhos-upload.jks
           cp "$RUNNER_TEMP/monstrinhos-signing/KEYSTORE_PASSWORD.txt" release-output/KEYSTORE_PASSWORD.txt
           printf '%s\n' 'Key alias: monstrinhos' > release-output/SIGNING_README.txt
           printf '%s\n' 'Keep monstrinhos-upload.jks and KEYSTORE_PASSWORD.txt private and backed up. They are needed for future Play uploads.' >> release-output/SIGNING_README.txt
-          sha256sum release-output/Monstrinhos_v5.2.0_release.apk release-output/Monstrinhos_v5.2.0_PlayStore.aab release-output/monstrinhos-upload.jks | tee release-output/SHA256SUMS.txt
+          sha256sum release-output/Monstrinhos_v5.2.1_release.apk release-output/Monstrinhos_v5.2.1_PlayStore.aab release-output/monstrinhos-upload.jks | tee release-output/SHA256SUMS.txt
 
       - uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: Monstrinhos-v5.2.0-PlayStore-release
+          name: Monstrinhos-v5.2.1-PlayStore-release
           path: release-output/*
           retention-days: 30
