@@ -23,7 +23,8 @@ jobs:
       - name: Verify source identity
         run: python3 tools/verify_release.py
       - name: Build debug APK
-        run: rm -rf "$HOME/.android/debug.keystore"
+        run: |
+          rm -rf "$HOME/.android/debug.keystore"
           gradle :app:assembleDebug --stacktrace
       - name: Verify generated APK
         shell: bash
