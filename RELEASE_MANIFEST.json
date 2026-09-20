@@ -1,8 +1,8 @@
 {
   "app": "Monstrinhos",
   "package_id": "com.caeless.monstrinhos",
-  "version_code": 5001,
-  "version_name": "5.0.0-rc2-test",
+  "version_code": 5002,
+  "version_name": "1.0.0",
   "save_namespace": "monstrinhos_save_v1",
   "save_schema": 2,
   "campaign_stages": 30,
@@ -66,14 +66,24 @@
   "high_contrast_overlay": true,
   "progression_goal_engine": true,
   "world_completion_ui": true,
-  "rc2_test_candidate": true,
+  "rc2_test_candidate": false,
   "release_checks": [
     "package_id",
     "version",
+    "target_sdk_36",
     "zip_integrity",
     "zipalign",
     "apk_signature",
+    "aab_signature",
     "native_abi_scan",
     "sha256"
+  ],
+  "target_sdk": 36,
+  "compile_sdk": 36,
+  "play_store_candidate": true,
+  "production_notes": [
+    "Google Play upload uses signed AAB",
+    "Release APK is provided for device smoke testing",
+    "No ads or billing SDK enabled"
   ]
 }
