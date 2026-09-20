@@ -35,6 +35,12 @@ android {
             }
         }
     }
+    buildTypes {
+        debug {
+            applicationIdSuffix '.rc1test'
+            versionNameSuffix '-test'
+        }
+    }
 }
 
 
