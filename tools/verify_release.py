@@ -13,7 +13,9 @@ if vc and vn:
     parts=vn.group(1).split('-',1)[0].split('.')
     try:
         major, minor = int(parts[0]), int(parts[1])
-        version_ok = int(vc.group(1)) >= 4100 and major == 4 and minor >= 1
+        # RC1 moved the app to the 5.x release-candidate line. Keep accepting
+        # reconstructed 4.1+ builds while allowing all 5.x+ release lines.
+        version_ok = int(vc.group(1)) >= 4100 and ((major == 4 and minor >= 1) or major >= 5)
     except (ValueError, IndexError):
         version_ok=False
 checks={'package':'com.caeless.monstrinhos' in text,'save':'monstrinhos_save_v1' in text,'version':version_ok,'launcher':'android.intent.category.LAUNCHER' in text,'no_admob':'com.google.android.gms.ads' not in text,'no_billing':'com.android.billingclient' not in text,'campaign_30':'safeStage' in text and 'Math.min(30' in text,'save_validation':'validateReleaseState' in text,'accessibility':'textScale()' in text and 'shouldAnimate()' in text}
