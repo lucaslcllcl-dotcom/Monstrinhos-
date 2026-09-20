@@ -50,4 +50,15 @@ public final class ReleaseCandidateVisuals {
   p.setColor(0xfffff0bd);c.drawRoundRect(w*.12f,h*.17f,w*.38f,h*.22f,18,18,p);
   p.setColor(0xff34345f);p.setTextAlign(Paint.Align.CENTER);p.setTypeface(Typeface.DEFAULT_BOLD);p.setTextSize(Math.max(13f,w*.035f));c.drawText("CASINHA • NÍVEL "+Math.max(1,level),w*.25f,h*.205f,p);p.setTextAlign(Paint.Align.LEFT);
  }
+ public static void drawCollectionBackdrop(Canvas c,Paint p,float w,float h,int owned,int favorite){
+  if(c==null||p==null)return;p.setColor(0xfffff4d6);c.drawRoundRect(w*.035f,h*.135f,w*.965f,h*.805f,42,42,p);
+  p.setColor(0xff6f56b8);c.drawRoundRect(w*.08f,h*.145f,w*.92f,h*.205f,22,22,p);
+  p.setColor(Color.WHITE);p.setTextAlign(Paint.Align.CENTER);p.setTypeface(Typeface.DEFAULT_BOLD);p.setTextSize(Math.max(14f,w*.038f));
+  c.drawText("DESCOBERTOS "+Math.max(0,owned)+"/32"+(favorite>=0?"   ★ FAVORITO #"+(favorite+1):""),w*.5f,h*.184f,p);p.setTextAlign(Paint.Align.LEFT);
+ }
+ public static void drawAchievementBackdrop(Canvas c,Paint p,float w,float h,int unlocked){
+  if(c==null||p==null)return;p.setColor(0xfffff1b8);c.drawRoundRect(w*.035f,h*.135f,w*.965f,h*.80f,42,42,p);
+  p.setColor(0xffffc83d);c.drawCircle(w*.5f,h*.17f,w*.07f,p);p.setColor(0xff34345f);p.setTextAlign(Paint.Align.CENTER);p.setTypeface(Typeface.DEFAULT_BOLD);
+  p.setTextSize(Math.max(14f,w*.04f));c.drawText(Math.max(0,unlocked)+"/8 LIBERADAS",w*.5f,h*.225f,p);p.setTextAlign(Paint.Align.LEFT);
+ }
 }
