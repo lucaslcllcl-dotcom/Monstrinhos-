@@ -30,4 +30,24 @@ public final class ReleaseCandidateVisuals {
   p.setColor(0xff34345f);p.setTextAlign(Paint.Align.CENTER);p.setTypeface(Typeface.DEFAULT_BOLD);p.setTextSize(Math.max(13f,w*.034f));
   c.drawText("AVENTURA • FASE "+Math.max(1,stage),w*.5f,h*.432f,p);p.setTextAlign(Paint.Align.LEFT);
  }
+ public static void drawMapBackdrop(Canvas c,Paint p,float w,float h,int world){
+  if(c==null||p==null)return;
+  int accent=world==1?0xff69c86c:world==2?0xffb67de0:0xffef9b55;
+  p.setColor(0x44ffffff);for(int i=0;i<5;i++)c.drawCircle(w*(.10f+i*.22f),h*(.18f+(i%2)*.06f),w*.08f,p);
+  p.setColor(accent);c.drawRoundRect(w*.04f,h*.14f,w*.96f,h*.72f,42,42,p);
+  p.setColor(0x55ffffff);c.drawRoundRect(w*.07f,h*.17f,w*.93f,h*.69f,34,34,p);
+ }
+ public static void drawGameplayArena(Canvas c,Paint p,float w,float h,boolean boss){
+  if(c==null||p==null)return;
+  p.setColor(boss?0xffffd0c6:0xffd8f6ff);c.drawRoundRect(w*.05f,h*.15f,w*.95f,h*.84f,46,46,p);
+  p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(Math.max(5f,w*.012f));p.setColor(boss?0xffe65e56:0xff66b9dc);c.drawRoundRect(w*.05f,h*.15f,w*.95f,h*.84f,46,46,p);p.setStyle(Paint.Style.FILL);
+  if(boss){p.setColor(0xffffc83d);Path crown=new Path();crown.moveTo(w*.42f,h*.19f);crown.lineTo(w*.46f,h*.14f);crown.lineTo(w*.50f,h*.19f);crown.lineTo(w*.55f,h*.14f);crown.lineTo(w*.59f,h*.19f);crown.close();c.drawPath(crown,p);}
+ }
+ public static void drawHouseBackdrop(Canvas c,Paint p,float w,float h,int level){
+  if(c==null||p==null)return;
+  p.setColor(0xffbdeaff);c.drawRoundRect(w*.04f,h*.14f,w*.96f,h*.72f,44,44,p);
+  p.setColor(0xff72c96a);c.drawOval(w*.03f,h*.55f,w*.97f,h*.79f,p);
+  p.setColor(0xfffff0bd);c.drawRoundRect(w*.12f,h*.17f,w*.38f,h*.22f,18,18,p);
+  p.setColor(0xff34345f);p.setTextAlign(Paint.Align.CENTER);p.setTypeface(Typeface.DEFAULT_BOLD);p.setTextSize(Math.max(13f,w*.035f));c.drawText("CASINHA • NÍVEL "+Math.max(1,level),w*.25f,h*.205f,p);p.setTextAlign(Paint.Align.LEFT);
+ }
 }
