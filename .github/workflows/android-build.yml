@@ -52,8 +52,8 @@ jobs:
           test -n "$APK"
           test -n "$AAB"
           BT="$ANDROID_HOME/build-tools/35.0.0"
-          BADGING="$("$BT/aapt" dump badging "$APK" | head -n 1)"
-          echo "$BADGING"
+          BADGING="$("$BT/aapt" dump badging "$APK")"
+          echo "$BADGING" | head -n 8
           echo "$BADGING" | grep -F "name='com.caeless.monstrinhos'"
           echo "$BADGING" | grep -F "versionCode='5002'"
           echo "$BADGING" | grep -F "versionName='5.0.0'"
