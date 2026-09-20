@@ -28,7 +28,7 @@ jobs:
           gradle-version: '8.11.1'
       - name: Build visual test APK
         run: gradle :app:assembleDebug --stacktrace
-      - name: Stage APK for download
+      - name: Stage and verify APK
         shell: bash
         run: |
           set -euo pipefail
@@ -36,6 +36,22 @@ jobs:
           test -n "$APK"
           mkdir -p apk-output
           cp "$APK" apk-output/Monstrinhos_visualtest.apk
+          BT="$ANDROID_HOME/build-tools/35.0.0"
+          {
+            echo "=== BADGING ==="
+            "$BT/aapt" dump badging apk-output/Monstrinhos_visualtest.apk | head -n 12
+            echo "=== ZIPALIGN ==="
+            "$BT/zipalign" -c -v 4 apk-output/Monstrinhos_visualtest.apk
+            echo "=== SIGNATURE ==="
+            "$BT/apksigner" verify --verbose --print-certs apk-output/Monstrinhos_visualtest.apk
+            echo "=== ZIP TEST ==="
+            unzip -t apk-output/Monstrinhos_visualtest.apk
+          } > apk-output/VERIFY.txt 2>&1
+          grep -F "name='com.caeless.monstrinhos.visualtest'" apk-output/VERIFY.txt
+          grep -F "versionCode='5202'" apk-output/VERIFY.txt
+          grep -F "versionName='5.2.2-test'" apk-output/VERIFY.txt
+          grep -F "targetSdkVersion:'36'" apk-output/VERIFY.txt
+          grep -F "Verified using v2 scheme (APK Signature Scheme v2): true" apk-output/VERIFY.txt
           sha256sum apk-output/Monstrinhos_visualtest.apk > apk-output/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
