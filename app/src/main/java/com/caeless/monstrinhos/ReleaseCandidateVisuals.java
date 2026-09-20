@@ -75,6 +75,18 @@ public final class ReleaseCandidateVisuals {
  private static void woodSign(Canvas c,Paint p,float l,float t,float r,float b,String label,float size){
   p.setColor(0x55000000);c.drawRoundRect(l+3,t+5,r+3,b+6,12,12,p);roundGradient(c,p,l,t,r,b,12,0xffe9b467,0xffbd753a);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(3);p.setColor(0xff7a431e);c.drawRoundRect(l,t,r,b,12,12,p);p.setStyle(Paint.Style.FILL);p.setTextAlign(Paint.Align.CENTER);p.setTypeface(Typeface.DEFAULT_BOLD);p.setTextSize(size);p.setColor(0xff5b2b16);c.drawText(label,(l+r)/2,t+(b-t)*.62f,p);p.setTextAlign(Paint.Align.LEFT);
  }
+ public static void drawReferenceLabel(Canvas c,Paint p,float l,float t,float r,float b,String label,float size){
+  woodSign(c,p,l,t,r,b,label,size);
+ }
+ public static void drawReferenceStageNode(Canvas c,Paint p,float x,float y,float radius,int stage,int stars,boolean unlocked,boolean boss){
+  int base=unlocked?(boss?0xffff6a55:0xff168cff):0xff9ca3ac;
+  p.setColor(0x44000000);c.drawCircle(x+3,y+5,radius,p);
+  Shader old=p.getShader();p.setShader(new RadialGradient(x-radius*.30f,y-radius*.35f,radius*1.25f,mix(base,Color.WHITE,.32f),mix(base,Color.BLACK,.18f),Shader.TileMode.CLAMP));c.drawCircle(x,y,radius,p);p.setShader(old);
+  p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(Math.max(3f,radius*.08f));p.setColor(unlocked?0xffffffff:0xff666666);c.drawCircle(x,y,radius,p);p.setStyle(Paint.Style.FILL);
+  p.setTextAlign(Paint.Align.CENTER);p.setTypeface(Typeface.DEFAULT_BOLD);p.setTextSize(radius*.82f);p.setColor(Color.WHITE);p.setShadowLayer(3,0,2,0xaa000000);c.drawText(""+stage,x,y+radius*.28f,p);p.clearShadowLayer();
+  float sy=y+radius*1.34f;for(int i=0;i<3;i++){p.setColor(i<stars?0xffffd134:0xff737982);p.setTextSize(radius*.48f);c.drawText("★",x+(i-1)*radius*.43f,sy,p);}p.setTextAlign(Paint.Align.LEFT);
+ }
+
  public static void drawPlayBadge(Canvas c,Paint p,float w,float h,int stage){
   woodSign(c,p,w*.30f,h*.452f,w*.70f,h*.486f,"AVENTURA • FASE "+Math.max(1,stage),Math.max(12,w*.029f));
  }
