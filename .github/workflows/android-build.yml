@@ -24,8 +24,30 @@ jobs:
         run: python3 tools/verify_release.py
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace
+      - name: Verify generated APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' -type f | head -n 1)"
+          test -n "$APK"
+          BT="$ANDROID_HOME/build-tools/35.0.0"
+          BADGING="$("$BT/aapt" dump badging "$APK" | head -n 1)"
+          echo "$BADGING"
+          echo "$BADGING" | grep -F "name='com.caeless.monstrinhos'"
+          echo "$BADGING" | grep -F "versionCode='5000'"
+          echo "$BADGING" | grep -F "versionName='5.0.0-rc1-visual'"
+          unzip -t "$APK"
+          "$BT/zipalign" -c -v 4 "$APK"
+          "$BT/apksigner" verify --verbose --print-certs "$APK"
+          if unzip -l "$APK" | grep -Eq ' lib/.*\.so$'; then
+            echo "Native libraries detected:"
+            unzip -l "$APK" | grep -E ' lib/.*\.so$'
+          else
+            echo "NO_NATIVE_LIBS: APK is Java/ART-only and has no ABI-specific native libraries."
+          fi
+          sha256sum "$APK" | tee app/build/outputs/apk/debug/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         if: success()
         with:
           name: Monstrinhos-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/*
