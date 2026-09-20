@@ -1,0 +1,57 @@
+name: Visual Smoke Test
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  visual-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install SDK packages
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Build visual test APK
+        run: gradle :app:assembleDebug
+      - name: Render Home and Map on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            set -e
+            APK="$(find app/build/outputs/apk/debug -name '*.apk' | head -n 1)"
+            adb install -r "$APK"
+            adb shell am force-stop com.caeless.monstrinhos.visualtest
+            adb shell am start -n com.caeless.monstrinhos.visualtest/com.caeless.monstrinhos.MainActivity
+            sleep 4
+            mkdir -p visual-smoke
+            adb exec-out screencap -p > visual-smoke/home.png
+            SIZE="$(adb shell wm size | awk -F': ' '{print $2}' | tr -d '\r')"
+            W="${SIZE%x*}"; H="${SIZE#*x}"
+            X=$((W/2)); Y=$((H*56/100))
+            adb shell input tap "$X" "$Y"
+            sleep 2
+            adb exec-out screencap -p > visual-smoke/map.png
+            test -s visual-smoke/home.png
+            test -s visual-smoke/map.png
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Monstrinhos-visual-smoke
+          path: visual-smoke/*.png
+          retention-days: 7
