@@ -1,4 +1,4 @@
-name: Android Debug Build
+name: Android Installable Build
 on:
   workflow_dispatch:
   push:
@@ -23,7 +23,8 @@ jobs:
       - name: Verify source identity
         run: python3 tools/verify_release.py
       - name: Build debug APK
-        run: gradle :app:assembleDebug --stacktrace
+        run: rm -rf "$HOME/.android/debug.keystore"
+          gradle :app:assembleDebug --stacktrace
       - name: Verify generated APK
         shell: bash
         run: |
@@ -52,5 +53,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: Monstrinhos-debug-apk
+          name: Monstrinhos-installable-apk
           path: app/build/outputs/apk/debug/*
