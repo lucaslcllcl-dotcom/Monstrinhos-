@@ -1,0 +1,23 @@
+name: Export Android Source
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create complete source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p export
+          zip -r export/Monstrinhos-Android-complete-source.zip .             -x '.git/*'                'export/*'                'app/build/*'                '.gradle/*'                '**/.DS_Store'
+          sha256sum export/Monstrinhos-Android-complete-source.zip | tee export/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Monstrinhos-Android-complete-source
+          path: export/*
+          retention-days: 30
