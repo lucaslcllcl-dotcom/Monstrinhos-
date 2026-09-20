@@ -2,12 +2,34 @@ plugins { id 'com.android.application' }
 
 android {
     namespace 'com.caeless.monstrinhos'
-    compileSdk 35
+    compileSdk 36
+
     defaultConfig {
         applicationId 'com.caeless.monstrinhos'
         minSdk 26
-        targetSdk 35
-        versionCode 5001
-        versionName '5.0.0-rc2-test'
+        targetSdk 36
+        versionCode 5002
+        versionName '1.0.0'
+    }
+
+    signingConfigs {
+        release {
+            def ks = System.getenv('MONSTRINHOS_KEYSTORE')
+            if (ks != null && !ks.isEmpty()) {
+                storeFile file(ks)
+                storePassword System.getenv('MONSTRINHOS_STORE_PASSWORD')
+                keyAlias System.getenv('MONSTRINHOS_KEY_ALIAS') ?: 'monstrinhos'
+                keyPassword System.getenv('MONSTRINHOS_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (System.getenv('MONSTRINHOS_KEYSTORE')) {
+                signingConfig signingConfigs.release
+            }
+        }
     }
 }
