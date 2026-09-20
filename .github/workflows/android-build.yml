@@ -35,7 +35,7 @@ jobs:
           echo "$BADGING"
           echo "$BADGING" | grep -F "name='com.caeless.monstrinhos'"
           echo "$BADGING" | grep -F "versionCode='5000'"
-          echo "$BADGING" | grep -F "versionName='5.0.0-rc1-visual'"
+          echo "$BADGING" | grep -F "versionName='5.0.0-rc1-final1'"
           unzip -t "$APK"
           "$BT/zipalign" -c -v 4 "$APK"
           "$BT/apksigner" verify --verbose --print-certs "$APK"
