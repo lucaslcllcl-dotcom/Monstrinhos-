@@ -51,7 +51,7 @@
   "album_card_rarity_badge": true,
   "album_card_favorite_badge": true,
   "album_card_locked_silhouette": true,
-  "real_ads_enabled": true,
+  "real_ads_enabled": false,
   "real_billing_enabled": true,
   "rc1_final_block_1": true,
   "onboarding_starting_egg": 1,
@@ -111,5 +111,9 @@
       "type": "non_consumable"
     }
   ],
-  "admob_ids_source": "GitHub Actions secrets; Google test IDs are fallback until live IDs are supplied"
+  "admob_ids_source": "GitHub Actions secrets; Google test IDs are fallback until live IDs are supplied",
+  "ads_sdk_integrated": true,
+  "real_ads_requires_admob_ids": true,
+  "billing_sdk_integrated": true,
+  "billing_products_require_play_console": true
 }
