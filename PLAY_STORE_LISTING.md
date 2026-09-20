@@ -3,13 +3,13 @@
 ## Identidade
 - App: Monstrinhos
 - Pacote: com.caeless.monstrinhos
-- Versão: 1.0.0
-- Version code: 5002
+- Versão: 5.1.0
+- Version code: 5100
 - Target SDK: 36
 - Categoria sugerida: Jogos > Casual
 - Público: infantil/famílias
-- Anúncios reais nesta versão: não
-- Compras no app nesta versão: não
+- Compras no app: sim, via Google Play Billing
+- Anúncios: sim, Google Mobile Ads em configuração infantil/G
 
 ## Nome da loja
 Monstrinhos
@@ -30,26 +30,33 @@ Destaques:
 - Álbum de coleção e recompensas
 - Casinha evolutiva e temas
 - Conquistas e desafio rápido
+- Loja com pacotes de moedas
+- Opção para remover anúncios automáticos
+- Vídeos recompensados opcionais
 - Opções de acessibilidade
-- Progresso salvo localmente no aparelho
 
-A versão inicial foi preparada sem anúncios reais e sem compras integradas ativas.
+## Produtos no Play Console
+Crie como produtos únicos:
+- coins_small — 300 moedas — consumível
+- coins_medium — 900 moedas — consumível
+- remove_ads — remover anúncios automáticos — não consumível
 
-## Declarações técnicas para o Play Console
-- Não requer conta.
-- Não contém chat.
-- Não contém localização.
-- Não contém câmera ou microfone.
-- Não contém SDK de publicidade nesta versão.
-- Não contém faturamento integrado nesta versão.
-- Não transmite progresso para servidor próprio.
-- Progresso e preferências ficam no armazenamento local privado do aplicativo.
-- App Bundle de produção deve ser o arquivo Monstrinhos_v1.0.0_PlayStore.aab.
-- Guarde a chave de upload e a senha entregues junto do release.
+## AdMob
+A build aceita IDs reais por ADMOB_APP_ID, ADMOB_REWARDED_ID e ADMOB_INTERSTITIAL_ID.
+Sem esses valores, usa IDs oficiais de teste do Google e não gera receita publicitária.
 
-## Data Safety — base para preenchimento
-Com o código atual, o aplicativo não possui permissão de internet nem SDK de terceiros e não foi implementado envio de dados para servidores. Confirme essas respostas no Play Console antes do envio caso qualquer integração tenha sido acrescentada depois deste arquivo.
+## Famílias / anúncios
+- Tratamento direcionado a crianças ativado.
+- Usuário abaixo da idade de consentimento ativado.
+- Classificação máxima de anúncio: G.
+- Permissão AD_ID removida.
+- Intersticial limitado a cada 3 fases concluídas, em transição natural.
+- Vídeo recompensado opcional: +30 moedas.
+- “Remover anúncios” elimina intersticiais automáticos.
+
+## Data Safety — revisar no Play Console
+A versão 5.1.0 possui internet, Google Play Billing e Google Mobile Ads. Atualize a declaração de Segurança dos dados para refletir os SDKs Google e marque que o app contém anúncios e compras no app.
 
 ## Política de privacidade
 Arquivo-fonte: docs/privacy.html
-A política precisa estar em uma URL pública ativa antes de concluir a ficha do Google Play.
+Publique essa página em URL pública antes de concluir a ficha do Google Play.
