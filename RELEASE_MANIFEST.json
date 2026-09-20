@@ -1,8 +1,8 @@
 {
   "app": "Monstrinhos",
   "package_id": "com.caeless.monstrinhos",
-  "version_code": 5200,
-  "version_name": "5.2.0",
+  "version_code": 5201,
+  "version_name": "5.2.1",
   "save_namespace": "monstrinhos_save_v1",
   "save_schema": 2,
   "campaign_stages": 30,
@@ -82,13 +82,11 @@
   "compile_sdk": 36,
   "play_store_candidate": true,
   "production_notes": [
-    "Approved home reference artwork integrated directly into the interactive screen",
-    "Approved World 1 map reference artwork integrated directly with aligned stage hitboxes",
-    "Remaining screens retain the unified glossy Monstrinhos visual system",
+    "Hotfix: approved Home/World 1 reference artwork now renders through Android Drawable resources instead of BitmapFactory",
+    "Home no longer mixes fallback campaign/phase overlays over the approved reference composition",
+    "Approved World 1 map remains interactive with aligned stage hitboxes",
     "Google Play upload uses signed AAB",
-    "Release APK is provided for device smoke testing",
-    "Google Play Billing store integrated",
-    "Rewarded ads and capped interstitials integrated with child-directed G-rated configuration"
+    "Release APK is provided for device smoke testing"
   ],
   "ad_sdk": "Google Mobile Ads 25.5.0",
   "billing_sdk": "Google Play Billing 9.1.0",
