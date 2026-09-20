@@ -2,7 +2,7 @@
   "app": "Monstrinhos",
   "package_id": "com.caeless.monstrinhos",
   "version_code": 5002,
-  "version_name": "1.0.0",
+  "version_name": "5.0.0",
   "save_namespace": "monstrinhos_save_v1",
   "save_schema": 2,
   "campaign_stages": 30,
