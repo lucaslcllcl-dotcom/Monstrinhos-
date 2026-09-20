@@ -1,6 +1,7 @@
 package com.caeless.monstrinhos;
 
 import android.content.Context;
+import android.view.HapticFeedbackConstants;
 import android.view.View;
 
 /** Bridges casinha actions to the shared timed/accessibility reaction system. */
@@ -13,6 +14,11 @@ public final class HouseReactionEvents {
         this.reactions = new ReactionController();
     }
 
+    private void feedback(GameState state, boolean strong) {
+        if (host == null || state == null || state.vibrationOn != 1) return;
+        host.performHapticFeedback(strong ? HapticFeedbackConstants.LONG_PRESS : HapticFeedbackConstants.VIRTUAL_KEY);
+    }
+
     /** Performs care and reports the actual persisted result. */
     public boolean care(Context context, GameState state) {
         if (context == null || state == null) return false;
@@ -22,7 +28,9 @@ public final class HouseReactionEvents {
             reactions.show(host, "Vamos tentar o carinho outra vez! 💖", state.accessibilityAnnouncements == 1);
             return false;
         }
-        if (state.houseLevel > beforeLevel) {
+        boolean evolved = state.houseLevel > beforeLevel;
+        feedback(state, evolved);
+        if (evolved) {
             reactions.show(host, "Carinho especial! A casinha evoluiu! ✨", state.accessibilityAnnouncements == 1);
         } else {
             reactions.show(host, "Carinho recebido! Seu monstrinho ficou feliz! 💖", state.accessibilityAnnouncements == 1);
@@ -38,6 +46,7 @@ public final class HouseReactionEvents {
             return false;
         }
         boolean ok = state.upgradeHouse(context);
+        if (ok) feedback(state, true);
         reactions.show(
             host,
             ok ? "Evolução concluída! A casinha ficou ainda mais especial! ✨"
@@ -53,6 +62,7 @@ public final class HouseReactionEvents {
         boolean alreadyOwned = state.hasDecor(decor);
         boolean ok = state.selectOrBuyDecor(context, decor);
         if (ok) {
+            feedback(state, !alreadyOwned);
             reactions.show(
                 host,
                 alreadyOwned ? "Tema da casinha escolhido! 🎨" : "Nova decoração liberada e escolhida! 🎉",
