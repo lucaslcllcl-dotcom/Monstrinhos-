@@ -26,9 +26,9 @@ public final class ReleaseCandidateVisuals {
  }
  public static void drawPlayBadge(Canvas c,Paint p,float w,float h,int stage){
   if(c==null||p==null)return;
-  p.setColor(0xfffff2b0);c.drawRoundRect(w*.30f,h*.405f,w*.70f,h*.445f,18,18,p);
+  p.setColor(0xfffff2b0);c.drawRoundRect(w*.30f,h*.442f,w*.70f,h*.478f,18,18,p);
   p.setColor(0xff34345f);p.setTextAlign(Paint.Align.CENTER);p.setTypeface(Typeface.DEFAULT_BOLD);p.setTextSize(Math.max(13f,w*.034f));
-  c.drawText("AVENTURA • FASE "+Math.max(1,stage),w*.5f,h*.432f,p);p.setTextAlign(Paint.Align.LEFT);
+  c.drawText("AVENTURA • FASE "+Math.max(1,stage),w*.5f,h*.467f,p);p.setTextAlign(Paint.Align.LEFT);
  }
  public static void drawMapBackdrop(Canvas c,Paint p,float w,float h,int world){
   if(c==null||p==null)return;
