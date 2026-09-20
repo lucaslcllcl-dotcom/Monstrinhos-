@@ -1,8 +1,8 @@
 {
   "app": "Monstrinhos",
   "package_id": "com.caeless.monstrinhos",
-  "version_code": 5000,
-  "version_name": "5.0.0-rc1-final-block-1",
+  "version_code": 5001,
+  "version_name": "5.0.0-rc2-test",
   "save_namespace": "monstrinhos_save_v1",
   "save_schema": 2,
   "campaign_stages": 30,
@@ -65,5 +65,15 @@
   "accessibility_state_ui": true,
   "high_contrast_overlay": true,
   "progression_goal_engine": true,
-  "world_completion_ui": true
+  "world_completion_ui": true,
+  "rc2_test_candidate": true,
+  "release_checks": [
+    "package_id",
+    "version",
+    "zip_integrity",
+    "zipalign",
+    "apk_signature",
+    "native_abi_scan",
+    "sha256"
+  ]
 }
