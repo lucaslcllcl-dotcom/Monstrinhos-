@@ -3,6 +3,8 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   visual-smoke:
@@ -25,7 +27,7 @@ jobs:
         with:
           gradle-version: '8.11.1'
       - name: Build visual test APK
-        run: gradle :app:assembleDebug
+        run: gradle :app:assembleDebug --stacktrace
       - name: Render Home and Map on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -37,11 +39,13 @@ jobs:
           script: |
             set -e
             APK="$(find app/build/outputs/apk/debug -name '*.apk' | head -n 1)"
+            test -n "$APK"
             adb install -r "$APK"
             adb shell am force-stop com.caeless.monstrinhos.visualtest
             adb shell am start -n com.caeless.monstrinhos.visualtest/com.caeless.monstrinhos.MainActivity
             sleep 4
             mkdir -p visual-smoke
+            cp "$APK" visual-smoke/Monstrinhos_visualtest.apk
             adb exec-out screencap -p > visual-smoke/home.png
             SIZE="$(adb shell wm size | awk -F': ' '{print $2}' | tr -d '\r')"
             W="${SIZE%x*}"; H="${SIZE#*x}"
@@ -51,9 +55,10 @@ jobs:
             adb exec-out screencap -p > visual-smoke/map.png
             test -s visual-smoke/home.png
             test -s visual-smoke/map.png
+            sha256sum visual-smoke/Monstrinhos_visualtest.apk > visual-smoke/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: Monstrinhos-visual-smoke
-          path: visual-smoke/*.png
+          path: visual-smoke/*
           retention-days: 7
