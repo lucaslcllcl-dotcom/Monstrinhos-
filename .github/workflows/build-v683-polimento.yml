@@ -1,0 +1,70 @@
+name: Build Monstrinhos v6.8.3 Polimento
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: ''
+      - name: Install Android SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Rebuild base and apply 681/682/683 patches
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat ci/tcc670_chunk_*.txt > "$RUNNER_TEMP/base.b64"
+          base64 -d "$RUNNER_TEMP/base.b64" > "$RUNNER_TEMP/base.zip"
+          mkdir -p "$RUNNER_TEMP/mon"
+          unzip -q "$RUNNER_TEMP/base.zip" -d "$RUNNER_TEMP/mon"
+          base64 -d ci/patch681.b64 > "$RUNNER_TEMP/patch681.zip"
+          unzip -oq "$RUNNER_TEMP/patch681.zip" -d "$RUNNER_TEMP/mon"
+          base64 -d ci/patch682.b64 > "$RUNNER_TEMP/patch682.zip"
+          unzip -oq "$RUNNER_TEMP/patch682.zip" -d "$RUNNER_TEMP/mon"
+          base64 -d ci/patch683.b64 > "$RUNNER_TEMP/patch683.zip"
+          unzip -oq "$RUNNER_TEMP/patch683.zip" -d "$RUNNER_TEMP/mon"
+          cd "$RUNNER_TEMP/mon"
+          python3 tools/verify_release.py
+      - name: Build APK
+        run: cd "$RUNNER_TEMP/mon" && gradle :app:assembleDebug --stacktrace
+      - name: Verify APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/mon"
+          APK="$(find app/build/outputs/apk/debug -name '*.apk' -type f | head -n1)"
+          test -n "$APK"
+          BT="$ANDROID_HOME/build-tools/35.0.0"
+          "$BT/aapt" dump badging "$APK" | tee "$RUNNER_TEMP/badging.txt"
+          grep -F "name='com.caeless.monstrinhos'" "$RUNNER_TEMP/badging.txt"
+          grep -F "versionCode='6830'" "$RUNNER_TEMP/badging.txt"
+          grep -F "versionName='6.8.3'" "$RUNNER_TEMP/badging.txt"
+          grep -F "application-label:'Monstrinhos TCC 6.8.3 POLIMENTO'" "$RUNNER_TEMP/badging.txt"
+          grep -F "targetSdkVersion:'36'" "$RUNNER_TEMP/badging.txt"
+          "$BT/zipalign" -c -v 4 "$APK"
+          "$BT/apksigner" verify --verbose --print-certs "$APK"
+          unzip -t "$APK"
+          mkdir -p "$RUNNER_TEMP/out"
+          cp "$APK" "$RUNNER_TEMP/out/Monstrinhos_v6.8.3_POLIMENTO.apk"
+          cp "$RUNNER_TEMP/badging.txt" "$RUNNER_TEMP/out/BADGING.txt"
+          sha256sum "$RUNNER_TEMP/out/Monstrinhos_v6.8.3_POLIMENTO.apk" > "$RUNNER_TEMP/out/SHA256SUMS.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Monstrinhos-v6.8.3-POLIMENTO
+          path: ${{ runner.temp }}/out/*
+          retention-days: 7
