@@ -1,9 +1,282 @@
 name: Build Monstrinhos v6.8.8 Idioma Unico
 on:
+  push:
+    branches: [ "chatgpt/monstrinhos-v6.8.8-idioma-final" ]
   workflow_dispatch:
 
 jobs:
-  hold:
+  build-and-qa:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
-      - run: echo "Workflow temporariamente pausado enquanto o patch 688 e atualizado."
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: ''
+      - name: Install Android SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Rebuild v6.8.7 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat ci/tcc670_chunk_*.txt > "$RUNNER_TEMP/base.b64"
+          base64 -d "$RUNNER_TEMP/base.b64" > "$RUNNER_TEMP/base.zip"
+          mkdir -p "$RUNNER_TEMP/mon"
+          unzip -q "$RUNNER_TEMP/base.zip" -d "$RUNNER_TEMP/mon"
+          for p in 681 682 683 684 685 686 687; do
+            base64 -d "ci/patch${p}.b64" > "$RUNNER_TEMP/patch${p}.zip"
+            unzip -oq "$RUNNER_TEMP/patch${p}.zip" -d "$RUNNER_TEMP/mon"
+          done
+
+      - name: Apply v6.8.8 language-only source patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/mon"
+          cat > "$RUNNER_TEMP/v688.diff" <<'PATCH_EOF'
+--- app/build.gradle
++++ app/build.gradle
+@@ -7,7 +7,7 @@
+         applicationId 'com.caeless.monstrinhos'
+         minSdk 26
+         targetSdk 36
+-        versionCode 6870
+-        versionName '6.8.7'
++        versionCode 6880
++        versionName '6.8.8'
+     }
+ }
+--- app/src/main/AndroidManifest.xml
++++ app/src/main/AndroidManifest.xml
+@@ -1,5 +1,5 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+-    <application android:theme="@style/AppTheme" android:label="Monstrinhos TCC 6.8.7 IDIOMA LIMPO" android:allowBackup="false" android:supportsRtl="true">
++    <application android:theme="@style/AppTheme" android:label="Monstrinhos TCC 6.8.8 IDIOMA ÚNICO" android:allowBackup="false" android:supportsRtl="true">
+         <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/>
+--- app/src/main/java/com/caeless/monstrinhos/MonstrinhosView.java
++++ app/src/main/java/com/caeless/monstrinhos/MonstrinhosView.java
+@@ -18,6 +18,7 @@
+     // 10 store, 11 tutorial/info, 12 eggs, 13 accessibility, 14 credits.
+     private int screen=0, selectedLevel=1, taps=0, misses=0, challengeScore=0;
+     private int activeTarget=0, selectedMonster=0, albumPage=0;
++    private boolean languageMenuOpen=false;
+     private String reaction="";
+     private long reactionUntil=0L;
+ 
+@@ -107,12 +108,25 @@
+         textFit(c,sub,w*.50f,h*.148f,13.8f,11.5f,w*.43f,0xFF5B3018);
+     }
+     private void languagePill(Canvas c,String label,float l,float t,float r,float b){
+-        // Preserva a cápsula/ícone impressos na arte; cobre somente a palavra do idioma.
+-        float tl=l+(r-l)*.08f,tr=r-(r-l)*.26f,tt=t+(b-t)*.17f,tb=b-(b-t)*.16f;
+-        float rad=(tb-tt)*.38f;
+-        p.setShader(new LinearGradient(0,tt,0,tb,0xFFFFFBF1,0xFFFFEED7,Shader.TileMode.CLAMP));
+-        c.drawRoundRect(tl,tt,tr,tb,rad,rad,p);p.setShader(null);
+-        textFit(c,label,(tl+tr)/2,tt+(tb-tt)*.68f,16.5f,12.5f,(tr-tl)*.90f,0xFF6A351B);
++        // v6.8.8: a cápsula, borda e seta existem somente na arte-base.
++        // O JPG já vem com a palavra original removida; aqui desenhamos APENAS o estado textual.
++        float textLeft=l+(r-l)*.10f, textRight=r-(r-l)*.28f;
++        textFit(c,label,(textLeft+textRight)/2,t+(b-t)*.61f,16.5f,12.5f,(textRight-textLeft)*.94f,0xFF6A351B);
++    }
++    private void drawLanguageMenu(Canvas c,float w,float h){
++        if(!languageMenuOpen)return;
++        // Seletor temático desenhado no mesmo Canvas: nenhuma View/Spinner/PopupWindow Android é criada.
++        float l=w*.555f,r=w*.895f,t=h*.565f,b=h*.635f,rad=h*.018f;
++        p.setShader(new LinearGradient(0,t,0,b,0xFFFFF6DF,0xFFFFDDA8,Shader.TileMode.CLAMP));
++        c.drawRoundRect(l,t,r,b,rad,rad,p);p.setShader(null);
++        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.4f);p.setColor(0xFFB45A35);c.drawRoundRect(l,t,r,b,rad,rad,p);p.setStyle(Paint.Style.FILL);
++        String[] names={"Português","English","Español"};
++        float row=(b-t)/3f;
++        for(int i=0;i<3;i++){
++            if(i==s.languageIndex){p.setColor(0x33E75A6A);c.drawRoundRect(l+4,t+i*row+2,r-4,t+(i+1)*row-2,rad*.45f,rad*.45f,p);}
++            textFit(c,names[i],(l+r)/2,t+(i+.69f)*row,14.5f,11.5f,(r-l)*.84f,0xFF6A351B);
++            if(i<2){p.setColor(0x55B45A35);c.drawRect(l+w*.025f,t+(i+1)*row,r-w*.025f,t+(i+1)*row+1,p);}
++        }
+     }
+     private void woodTextPatch(Canvas c,String title,String sub,float w,float h){
+         // Traduz apenas as áreas de texto da placa, sem encobrir cordas, parafusos, bordas ou personagem.
+@@ -254,7 +268,7 @@
+         p.setColor(0x42FFFFFF);c.drawRoundRect(l+w*.025f,top+h*.004f,r-w*.025f,top+(bot-top)*.28f,rad*.55f,rad*.55f,p);
+         textFit(c,reaction,w*.50f,top+(bot-top)*.64f,17.5f,14f,(r-l)*.90f,0xFF65391E);
+     }
+-    private void drawVersion(Canvas c,float w,float h){text(c,"v6.8.7 UI",w*.91f,h*.988f,8,0xCCFFFFFF);}
++    private void drawVersion(Canvas c,float w,float h){text(c,"v6.8.8 UI",w*.91f,h*.988f,8,0xCCFFFFFF);}
+ 
+     private void settingSlot(Canvas c,float l,float t,float r,float b,int c1,int c2){
+         // Máscara opaca em degradê, combinando com a faixa original, para apagar completamente o switch/texto impresso.
+@@ -325,6 +339,7 @@
+         artToggle(c,w*.650f,h*.459f,w*.858f,h*.506f,s.vibrationOn==1);
+         // O seletor mantém a própria cápsula original da arte; somente o texto é substituído.
+         languagePill(c,s.languageName(),w*.625f,h*.641f,w*.872f,h*.694f);
++        drawLanguageMenu(c,w,h);
+         drawReaction(c,w,h);drawVersion(c,w,h);
+     }
+     private void drawHatchOverlay(Canvas c,float w,float h){
+@@ -390,7 +405,7 @@
+         creamTag(c,tr("Projeto acadêmico • TCC","Academic project • TCC","Proyecto académico • TCC"),w*.22f,h*.335f,w*.78f,h*.385f);
+         text(c,tr("Jogo infantil Android","Android children’s game","Juego infantil Android"),w*.50f,h*.445f,18,0xFF6A4A32);
+         text(c,tr("Identidade visual: Monstrinhos","Visual identity: Monstrinhos","Identidad visual: Monstrinhos"),w*.50f,h*.495f,16,0xFF6A4A32);
+-        text(c,tr("Versão funcional 6.8.7","Functional version 6.8.7","Versión funcional 6.8.7"),w*.50f,h*.545f,16,0xFF6A4A32);
++        text(c,tr("Versão funcional 6.8.8","Functional version 6.8.8","Versión funcional 6.8.8"),w*.50f,h*.545f,16,0xFF6A4A32);
+         text(c,"com.caeless.monstrinhos",w*.50f,h*.595f,12,0xFF6A4A32);
+         text(c,tr("Progresso salvo localmente no aparelho","Progress saved locally on the device","Progreso guardado localmente en el dispositivo"),w*.50f,h*.645f,14,0xFF6A4A32);
+         glossyButton(c,"↩",tr("VOLTAR","BACK","VOLVER"),w*.24f,h*.715f,w*.76f,h*.785f,0xFF43B7FF,0xFF147FD7,0xFF0A5BA6);
+@@ -618,7 +633,16 @@
+                 if(y>h*.35f&&y<h*.44f){s.toggleMusic(getContext());react(tr("Música ","Music ","Música ")+(s.musicOn==1?onWord():offWord())+".");break;}
+                 if(y>h*.44f&&y<h*.53f){s.toggleVibration(getContext());react(tr("Vibração ","Vibration ","Vibración ")+(s.vibrationOn==1?onWord():offWord())+".");break;}
+                 if(y>h*.53f&&y<h*.63f){screen=13;break;}
+-                if(y>h*.63f&&y<h*.72f){s.cycleLanguage(getContext());setContentDescription(tr("Monstrinhos. Jogo infantil com fases, coleção, ovos e casinha.","Monstrinhos. Children’s game with stages, collection, eggs and house.","Monstrinhos. Juego infantil con fases, colección, huevos y casita."));reaction="";reactionUntil=0L;break;}
++                if(languageMenuOpen){
++                    if(x>w*.555f&&x<w*.895f&&y>h*.565f&&y<h*.635f){
++                        int pick=clamp((int)((y-h*.565f)/(h*.070f/3f)),0,2);
++                        s.languageIndex=pick;s.save(getContext());languageMenuOpen=false;
++                        setContentDescription(tr("Monstrinhos. Jogo infantil com fases, coleção, ovos e casinha.","Monstrinhos. Children’s game with stages, collection, eggs and house.","Monstrinhos. Juego infantil con fases, colección, huevos y casita."));
++                        reaction="";reactionUntil=0L;invalidate();break;
++                    }
++                    languageMenuOpen=false;invalidate();break;
++                }
++                if(y>h*.63f&&y<h*.72f){languageMenuOpen=true;reaction="";reactionUntil=0L;invalidate();break;}
+                 if(y>h*.72f&&y<h*.82f){screen=14;break;}
+                 break;
+             case 6:
+--- tools/verify_release.py
++++ tools/verify_release.py
+@@ -6,8 +6,8 @@
+ checks={
+ 'package':'com.caeless.monstrinhos' in text,
+ 'api36':'compileSdk 36' in text and 'targetSdk 36' in text,
+-'version':'versionCode 6870' in text and "versionName '6.8.7'" in text,
+-'label':'Monstrinhos TCC 6.8.7 IDIOMA LIMPO' in text,
++'version':'versionCode 6880' in text and "versionName '6.8.8'" in text,
++'label':'Monstrinhos TCC 6.8.8 IDIOMA ÚNICO' in text,
+ 'backup_disabled':'android:allowBackup="false"' in text,
+ 'save':'monstrinhos_save_v1' in text,
+ 'references':all(x in text for x in ['R.drawable.tcc_home','R.drawable.tcc_map','R.drawable.tcc_gameplay','R.drawable.tcc_album','R.drawable.tcc_house','R.drawable.tcc_settings','R.drawable.tcc_achievements','R.drawable.tcc_hatch']),
+PATCH_EOF
+          patch -p0 < "$RUNNER_TEMP/v688.diff"
+
+          cat > RELEASE_NOTES_v6.8.8_IDIOMA_UNICO.md <<'NOTES_EOF'
+# Monstrinhos v6.8.8 — Idioma Único
+
+Atualização pontual a partir da v6.8.7 IDIOMA LIMPO.
+
+- Mantém package com.caeless.monstrinhos, targetSdk 36 e save monstrinhos_save_v1.
+- Corrige somente o seletor de idioma em Ajustes.
+- A cápsula visual existe uma única vez na arte original.
+- O texto selecionado é desenhado uma única vez: Português, English ou Español.
+- O seletor temático é desenhado pelo próprio Canvas do jogo, sem Spinner, PopupWindow, Toast ou View adicional.
+- Som, Música, Vibração, gameplay, mapa, casinha, álbum, ovos, conquistas, HUD, economia, AdMob e Billing não foram alterados.
+NOTES_EOF
+
+      - name: Clean baked language text from original art
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/mon"
+          base64 -d > "$RUNNER_TEMP/lang_patch.png" <<'IMG_EOF'
+iVBORw0KGgoAAAANSUhEUgAAAIcAAAAoCAIAAABbz35mAAAUp0lEQVR42pV70XYkOa5cBMgsdc/O/P+/2X9gP/ge351Rq5KI8ANIZpak2V3X6dOSSqVMEgADgQCS4+O/jKRBkmxgAwK3l50AbNeP9cn9W9L1of1pvL785Z31h8R/9NK3F7S9r/B6qbBdnyG5f+W/Wdhc/5eF3a//767Af7HN/98t13U6IaLRJgiEBIS3PWwDBCAZAMNRPwNRX/9mNf92lV+3/S+u8+3Ov72CCAOeVsD+vb+ujV9/c3ubX341t3vd0esLb759DVl+WvO/2LJtQAGA7gHCwD2mfC1DyHCkTVsAE6b3/UheXrnd7zuXCIjXwI//3Iu2QQME/WrT//zA+XajeF3Gy3EMv6xHRBha96Hmm5/WXDYl246Vv3NAXe1+zTsA1IZCYMIiRJhqPWhAScs5PE7naHSAjdTI43iL6B8fH9EbwsNKLBCrVRqsMDVoQQklYUAMGANM0BVettMcQppmO5U8uoPPHHVZ27AIQ2nITkCAnAOqhduQIbF+MIAGNjAsKqmkFXD9a7xQcRkuwkGRchiQIdOof2EE2MBG1J//+uvPI0jlGM/eI/PMPB8tNE4qPc7O0DmIJimMsBrc4AayLr7/TyGFHFRemULuNzSwHbAyh6RoiIiOZhvOMQTEj5+//fnf/92O/tsff7z/8/++vb2V5ZIvgQYAsikaJgirbiLZaYNshuGCSwPojweQFJVpOyJaawz44wS5Vpz76hFtZQUDwa/54UINA5DG3qnQZlyLDOzkQ5MgeGGj7XVEYSJA2L13yBHR0Gz33m3/+dc/j+NQjsz0cfTeARCtImDisL0ORaFNhbNux9Y0bDM//ou67Sh6ll3aZV2SSvTec122NaLh+Xz23uMTZtd9x+lgGI6JEUYCiHIQgmwwAdSdWmuSzvOsVY4xardvrQH1wYkSawPtyjeV+ersO27You0VQJsFwI1k4ZiDJJcFVPmyvGLb0L5LvaORCBLBFsOyHUHbkEiWt57nkHC8/TyOQ+P5XZCs9fD2M8AKAqC/2tMRiIiCTzt3to8ISSk/Hg9pjDF663Oty2SUXeFgI8pSnt4AvBFpZsrkujvJMQagiLrVfCG1YwsX9dC+2nKJxfpQXAC98rFdlvXFzb7yjpcUZAKSVjL7DP0tWsphk5RUt4qI8mW9fvvtLYHn89njS+K8Fm5f+1DRLSBo9H1Q5qI16juSQQDMOvWZEdF7PJ+/4ujtcZzns/eetWffL5GGG4tNeAd47dyq7wnCvIBCGuv72qcDdsC1nPAnSuZiPmTB15VZbWha2bzyZ1m5/jwskBFhrtP2yh1oKAUCLHzj3hxbAGDAUAWQrXJPRBgeytYaej/ff7XW0lGMwp4IHMsS+5BPVqF1Au5n5bLqKxPlioKIMNB7L8bcWisfV7SHwYh1iWlGL4fd6Urtk2xVUHgm3GlcLZgtOwbjxkp9Zen5bZAUC6WDBjCuGuWG3juQbQMmo3a0oe/uFRMUv2Xe5QBE4VsdF5MsBK4LjjPHr1+S3t7eclz13LyaQW5I0b0m2zHUbQc7PFlHZdqJoSLJqETVeZ4fx+MHgMxRtwdAtjDgCgHRkAjDyoopgjYwVzFBiEGHKwxE2a4tlbtoR20eMGSsxRO2A4Rc55BynSkDpmLSc93jTC4YfIk2WQW9lc/FzyWRaGNisl8KF9qGGwBaBBsJWxPtASAaW4vfjuP56z2Ox/LKxk9v5Joh+xpzgvs33F6TNpR76h0Zj8cjRyL4aD2xwGekABoJ0CnJKUm9VeQDZFQakWAr02QESIJRIJPw4/G4jmuhgR0ROYYXomrGF0m2WDiQBiUEgKSO4CxqbFmSyl7S2NHmnKm741EWWV7RpxKkCKEsvr58K0dqqQB77+d5RkRrdevX2+PH4/H42MkAMrSqNrIIOgd1t9XzXr/P1BRDj6fz97jBb5IzP1jAcVF82eWWhUsi7lOcqGKemUu1EIueHIZCCFMYBE1qeGmpOKmT5eZNA0EUVK0XunBkygzrG0vSZlV5fh+gFjEqxJSuxhHIm+o5XkJidYCWI4xtpBjxg3itFde7IGIe3lv6LajCn3di81pw/Ylr3xbZt8UMJFtHrdVy+/wkccUa4LhtRSi+PHncndujOHK/O6Mjaq3+/qFtazcEBGrwJ84QMu2Y6L8q0TGT8oH5+0/feylGs/MiGjlDLMcLKn3vvPTnTHfl8fKhV5Ouo7gHQv1rZGXDmYtY2hXJy/O2Iy2wZ465uaSKkJ1lQMC0EjN+suIIoCwHbcN1N4LcinK2nG0hBzekfe2HnH9LiCbMzSJMH1nsSnYnEB+nelVJ07ttRjdvJdd+PfofcJgiQZka6215tKnNputupPMm+rUcGU307DiHut6Yeec5WMdsKLj6huq/wbmcpa2RNEjsxgrADsWs3MUITZMc0ABitouLLvoKsFXPTcThqBZNSyY/nfKJqaJA5Kj2ATaIv0FEZNfTO7uMhF3fT1pouNzWt2Z7JOkOMnK68nbR+Rz4C8CWkH2Vam8/egbNhh2n3lxvrJ0AV5isAHC04fzXDomiRc8SapZvynrUi5FHeCqlov+19tVVS+ZywgHF88q39nCln9Z2toE4gpzCUqDaGFkwQW9NF0Tmj+U/yrPxsXkLyt+0moC1PzDoiSTBQg2FlN//bxfcexrJe8lcGFpHA2UBQQBc+5Lc8PTK5u1apJQ30ULGlkq4eXnaETSjaU3oMDJgmdZGnV8g7ixwJU5bAMJTxGhaoodmVcVDlj3mN0dFG1pBzJ5A3EvA82CcTke9TFEEEbtn6um+XocS++ZFT5UyYyLr++MdWXJJdLtWqo+4LvSsyqSa3evygWpMnJXEc5bRcFbpT53yKqHb1cXwAZm2QeOxe3XXy2GVrYkCtHqDCZu2a/Ewyl1VFUWBEFxkYspp1DkTB1BZJWum+zbDgSWS2xRkGxIUoNFtCU1VcIuhLXNe6VZYXiOW83/wgAv4FoiBMrvnEH2otBgqV3rLlFAP13jq3HIqVmE0elPzR1d3GdagrYY8NyCgaDlSiwkSzHb2tFCZ06d1G1qiKIRROH2pwiNiF1nlZuXmarI0FcofwUKy96BbHtraJSRowi1CQrTnPOoGhY+XW3nidthQDUGlzmraraNnLm6+hcFwvbSFFKAzLB3x8Ofunlbbt+dtg5V5Bo2lHYjbQJOw80LFK2I0OT1shm0ldNWJZltzZOQFasXODR7HiQ1RBJ1HBCZ5/rbyd5B0oEJ32yt/fXXX4/HIam1OrgEnQmwiYWKBNCmqo99VlZnwVea5F3wWkeTs7AoonGe5/P5/PHjR0RcCti+Mrcyv7N3GI6IUhFmhHmKT7RJq3SCSZtYUqTgsSshOUCrFPYv9Uq1E+C0HYs0b1Irg5wOsVfT4eb/u+hUgsaNBWoKM3bJirNqAyMw1mlYauDFkiO4KmHvLkusTsOrojwV4gLzWOFa3ZSrylvgnDPxgqA85b7jOKoo2ccurhtN3L+Ogk0qTJ3PV41OMiFFURbmJmYlvixd0WlRFT3sEbXyDipc2MgooqnZnwFjK+cj1XoEo+pbpVpjb62yzexuFdBPdCaqF7laYWufQiV6RjXBgoxoARipVZZhMgg+nx9jjNaaneWbJXrccMBXFuVC82qIlWZBBn1TQq15o1qpsvJ1RIDAck/h4NUVcMWQPlV8fi1Cee/TcKYNTrrxjdbpIdBkZI7GXge7747I/koI8qcuRDXXiqH13ltrNCwv+rP45b2uLq1z8St/6bNv+F7pCpKqJWon0UoqP44WMXOYpElD/KUq/pv+/1Zo7nV4oNQP0psryw62bo+quozckuBqMRg3FfKe4T5bnJy6DqvjN4OmYYrYtimQkNR7RMQ4T1F0AOg36iQ76djsvohsGSAzW2uBWKyCYQ+7ln/p4b7NdpTPNNnJlHMDt96TGdWZdkTI2S/5lFNZoltrZLHz3X1ZUvpLVTY7b7PP+JpUV00ArlmAonKZYouCHQmubbbmHHZuBK4qf/XBdp9m4jtJS59GbRoCZAKuDoNcYlmwkKVNZUFJ0bsccM6zsgm1nUZBeMSaPCqcPJ/PeHuL1mxnZmb23iJiF9DVzMnZWblan56teX+axLmTEEnFXxf48po+SYjQFNZ476h/N2VyL37vLbL7x/JqbKRsMsv91QeFE/cjwlU/rQmXl2gwclaafjkxbd5LRWP93QBQ4Xw1eXcDprzbN9bvfebCGS5maeLH8ZA9TrXWlkJXtdjLzWL3wVbTrc7b1YucZi2OxB2JNOMmhN0n/jopJZegWtl+968m973VkFvj4ksdrq0VsqrTmTZiVg2tRwQspdI6juM2sgNLl2xArZrMgKpbUaznVb1ZhkaGmxbTjhK8mFVrtQgpJc02TamTXwantAy+yZWjKp2KoAjAIzMaW7R75/UuXVAWvANtZ8LY6POpk6F7Rc97QHlV1HeN3ZcutUDpJRLLIpdCMVuQ5VTDyNkPDE1rKiUjGGw92qeCfFVC9yyi+xhfseo7pq6GjeBl1SUJLnlbu8lb9emwStnsyjOi6JAjokBwqiPL1qQtEUQwM02wN9PDA0Jc1dPs218ThaWPVoyn0AI3P0XEGCMzH4+HNI+ObUpRrZnVfSn1STcdkFc1WsxrFwqXInlve985CKSZ7mjOir15VvVERHlNUvS2ZnpaZhbdqFy4qgiBsGPBb8yus1RqdGkxtWKJNHOON+35E5FoYDo30PRP1QoJI3IkHQHQApHniOg1ZIBoOx/zJvtc0y2cKukKH9/r5Mxs7ei9S6rOdr25OxZVRs9DDTDkeXQItmoWRcTIIsoFHzPcJMX3I5yLW5a9sQ/QxQPDmJMhYI0ktNZ0S7qrtQNG6RgCsmS68mNE7CGb7Zt9TJFm9D0ssFnvKkm1tfDtlevUjzGit2C0qiHSQNI5uahbjRWhJITK4qZXD3VyIQlyZXAA0Yvytkc/KEfrUjGGlNJGZv58/FTWVktrcs3Ttui2h0RGjzBsRu/VcuQYOcYI4PF4hDky2fu9aXbryhSPmsMJu+lUyyDZ+yOikZx0h5YVbCBzfbi19vFxYi2SRYpwiaG7Ezh1rRbVjoZAMkjZY4y6FG7E5hOd56///T95E/jcISnUNNzIHiSS4cw0guhmCIGwIgH99viHMjNHZpb0VHXWeJ4/f/4kWZM4ESFBdkRLGHBEHMfx8fEh+fF4UIzeYZ/PX+f53NlHcO/9cfxwxDg1xkCwtUZIyl7jVtL7+3tjfzweKw/jJXVRu29dmsWnAe0CnzRJtuMREb33OtbjPGsLmXkcR+Yo6iUNa9T8NEmr9d57f8w5GDszRz5bI8maFOj9weqithhj2A5dMy6mEo4kED3WCAeBrNnkROutkT0iiI+PX1ZGxBLmHIDksBH4888/a3Jsz7rVodkuyUwAaRGt9z7GINB7f39/90hLRz/OXx8Seu+kM3MNeEkaj+NI+zxPgM+h3h9vb2/SnOdprZ3necRxdB3tkDSUV+7ZXViX5joZjm4RrZGoCWg4ovXe2Zqkj1/P4ziqRbPb0s/nMzNbi9bZWpt64Hw9IiKHznPYfjyO1prjGPkM1Q04MAxITvg4jhtLqnjREsj1MjsZmDNEhc6ZWcXXcRxjDKwBzEkDDcnH8SiNesstyjMzJ3oE397eEKysXrUOycePH29vb7XVfhx//fXXP/7xR7Xdyv3SkIbtMYYE9Oj9eHs7juMN5HiO1hqQY+j9/R2PiePP57M/+qeZsbrs16nJew9xTvOYNdeSmUd/RMRf7+8FNR8fHxVnj8dDypFPaWwRyOYYA46IVplS0jMHoN4eGk/bKcFovR8/3h7kGONlEvg+Eraz/VZDx3MEu0f2/sg8zzEMD51zznEfLK8hDjszlcN2Z0QEF02M1iIiM5U+jkM9zvP87fff3//889f7PyMiGB/PD0l//PH7x8fHVm1zjMwzAsejjVPH8YhoKkcNVWRWs6K39vvvv4fj/f3d9NvbGwKfSG25JK6+1Itj0ogaRAPOHOF4e/v5+Pnz4/0Xrd774+3NUmZ+fHyMUYNwjobjOFp7VNyc53kcb5KHRRwApu7Z2nmekI7+6NGGbPB85nOcP96Obzuh883n//of2yVT7xI/fj0rxp/Pj34g87RNNrrDLKYLJshT2VqPYt8jJQVduPzr16+SYIdSEqKT1Dl+/vx5nmfq/PnjH5I+Pj4qH6yqRUGTrrGSiOj9IcHgcbylLeE4WuoEIJW2jYiAICl67PJiIZi2V17KINv2cbx9PJ8E+nFEVP8RFVIbtewXwJnl2KQMW42OYE9gJ3MSNYQ2nr8aO8kxFK23x1GAUQudw9iUp7oa0yugdAkMLV6Goacet7hC7J63li4e/mZk6e8fauKt9J2q/RJREoipiGwL8pgVyyrfyIavwu01W62vD+3tQ/O6kF2iY126revjrn4uf4hkfp6imlMgK5O1+/VfehwTQttt/EqX5n2NlZmOPhnkytJeTyJtKYmI10Emi5dx498/Doh/4Z6rCT0Vkdwgux9mWI19RT0hNRVdmp5TBQJomqBbD2+p7xbdNSebed5m2F7m0/6m0SmsCQdQQCtZaE5QGNVr8nrAZfaz6vtP/5enQwTv72x/LNkwzFIn6zGPIFplcczurgxKVRjeZEMa2vbaT6V9ot1/d1Y+zflQ+vJUx11csTVbNbPPVAxXwW4nUZ3X0jIClpOXTLkfP8McnwruvgosC44i/5OFBqqxeY0WzxYW56MuU7Ogb2u+PRDI216mxeYEK6Zcu5R4rr7U/fNzJIzovGbaXL1pXzqSvs44zTbnHEubmtT30fHt/7jaLWuK+/uxzbXPF5fQU8hC29979n2oPSSN6+h7V4t7TuUCQJn98ylZyHl7esxR2nDNEcAvzypdw2bzK65pM199pj3Yt54T8CcXzkYuQavTDMREKjmC4ku7l7Pmuh6K+f7xWt9CbD41Ad4+Pz9T/TSj+gwvVcWrwj+f56S2T3CbCtVstt6jmkHCUyieDY89Jw/NobKlCgUjejde0yj3oNp+zESudsSUZ/Tdg8jA3wwxLSACvuDJ58G+S5bS/wNVfa/3cJQkcgAAAABJRU5ErkJggg==
+IMG_EOF
+          cat > "$RUNNER_TEMP/PatchSettings.java" <<'JAVA_EOF'
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.util.Iterator;
+import javax.imageio.*;
+import javax.imageio.stream.ImageOutputStream;
+
+public class PatchSettings {
+  public static void main(String[] args) throws Exception {
+    BufferedImage base = ImageIO.read(new File(args[0]));
+    BufferedImage patch = ImageIO.read(new File(args[1]));
+    if (base.getWidth()!=864 || base.getHeight()!=1536) throw new IllegalStateException("Unexpected settings artwork size");
+    Graphics2D g = base.createGraphics();
+    g.drawImage(patch, 555, 1005, null);
+    g.dispose();
+    Iterator<ImageWriter> it = ImageIO.getImageWritersByFormatName("jpeg");
+    ImageWriter writer = it.next();
+    ImageWriteParam param = writer.getDefaultWriteParam();
+    param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+    param.setCompressionQuality(0.95f);
+    try (ImageOutputStream out = ImageIO.createImageOutputStream(new File(args[0]))) {
+      writer.setOutput(out);
+      writer.write(null, new IIOImage(base, null, null), param);
+    } finally {
+      writer.dispose();
+    }
+  }
+}
+JAVA_EOF
+          javac "$RUNNER_TEMP/PatchSettings.java"
+          java -cp "$RUNNER_TEMP" PatchSettings             app/src/main/res/drawable-nodpi/tcc_settings.jpg             "$RUNNER_TEMP/lang_patch.png"
+
+      - name: Source QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/mon"
+          python3 tools/verify_release.py
+          ! grep -R -E 'Spinner|PopupWindow|Toast\.makeText|addView\(' app/src/main/java
+          grep -F 'private boolean languageMenuOpen=false;' app/src/main/java/com/caeless/monstrinhos/MonstrinhosView.java
+          grep -F 'languagePill(c,s.languageName()' app/src/main/java/com/caeless/monstrinhos/MonstrinhosView.java
+          grep -F 'drawLanguageMenu(c,w,h);' app/src/main/java/com/caeless/monstrinhos/MonstrinhosView.java
+          grep -F 's.languageIndex=pick;s.save(getContext());languageMenuOpen=false;' app/src/main/java/com/caeless/monstrinhos/MonstrinhosView.java
+          grep -F 'String[] names={"Português","English","Español"};' app/src/main/java/com/caeless/monstrinhos/MonstrinhosView.java
+
+      - name: Configure stable test signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.android"
+          rm -f "$HOME/.android/debug.keystore"
+          keytool -importkeystore -noprompt             -srckeystore "$GITHUB_WORKSPACE/app/keystores/monstrinhos-test.jks"             -srcstorepass 'monstrinhos-test-only-2026'             -srcalias 'monstrinhos-test'             -srckeypass 'monstrinhos-test-only-2026'             -destkeystore "$HOME/.android/debug.keystore"             -deststorepass 'android'             -destkeypass 'android'             -destalias 'androiddebugkey'
+
+      - name: Build APK
+        run: cd "$RUNNER_TEMP/mon" && gradle :app:assembleDebug --stacktrace
+
+      - name: Verify APK identity alignment signature and archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/mon"
+          APK="$(find app/build/outputs/apk/debug -name '*.apk' -type f | head -n1)"
+          test -n "$APK"
+          BT="$ANDROID_HOME/build-tools/35.0.0"
+          mkdir -p "$RUNNER_TEMP/out"
+          "$BT/aapt" dump badging "$APK" | tee "$RUNNER_TEMP/out/BADGING.txt"
+          grep -F "name='com.caeless.monstrinhos'" "$RUNNER_TEMP/out/BADGING.txt"
+          grep -F "versionCode='6880'" "$RUNNER_TEMP/out/BADGING.txt"
+          grep -F "versionName='6.8.8'" "$RUNNER_TEMP/out/BADGING.txt"
+          grep -F "application-label:'Monstrinhos TCC 6.8.8 IDIOMA ÚNICO'" "$RUNNER_TEMP/out/BADGING.txt"
+          grep -F "targetSdkVersion:'36'" "$RUNNER_TEMP/out/BADGING.txt"
+          "$BT/zipalign" -c -v 4 "$APK" | tee "$RUNNER_TEMP/out/ZIPALIGN.txt"
+          "$BT/apksigner" verify --verbose --print-certs "$APK" | tee "$RUNNER_TEMP/out/SIGNATURE.txt"
+          grep -F 'Signer #1 certificate SHA-256 digest: f562b57aa046dbb098922a6dc520f3ff8e1ad190d129c7e61a254588646ce514' "$RUNNER_TEMP/out/SIGNATURE.txt"
+          unzip -t "$APK" | tee "$RUNNER_TEMP/out/ZIPTEST.txt"
+          cp "$APK" "$RUNNER_TEMP/out/Monstrinhos_v6.8.8_IDIOMA_UNICO.apk"
+          sha256sum "$RUNNER_TEMP/out/Monstrinhos_v6.8.8_IDIOMA_UNICO.apk" > "$RUNNER_TEMP/out/SHA256SUMS.txt"
+
+      - name: Export consolidated source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/mon"
+          zip -qr "$RUNNER_TEMP/out/Monstrinhos_v6.8.8_IDIOMA_UNICO_source.zip" .             -x 'app/build/*' '.gradle/*' 'build/*'
+          sha256sum "$RUNNER_TEMP/out/Monstrinhos_v6.8.8_IDIOMA_UNICO_source.zip" >> "$RUNNER_TEMP/out/SHA256SUMS.txt"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Monstrinhos-v6.8.8-IDIOMA-UNICO
+          path: ${{ runner.temp }}/out/*
+          retention-days: 7
