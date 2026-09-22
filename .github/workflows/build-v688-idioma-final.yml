@@ -96,7 +96,7 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           script: |
-            set -euo pipefail
+            set -eu
             APK="$RUNNER_TEMP/out/Monstrinhos_v6.8.8_IDIOMA_FINAL.apk"
             adb install -r "$APK"
             adb shell am force-stop com.caeless.monstrinhos
