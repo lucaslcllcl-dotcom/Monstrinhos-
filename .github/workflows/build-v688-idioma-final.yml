@@ -155,11 +155,7 @@ jobs:
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/mon"
-          base64 -d > "$RUNNER_TEMP/lang_patch.png" <<'IMG_EOF'
-          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
-          IMG_EOF
           cat > "$RUNNER_TEMP/PatchSettings.java" <<'JAVA_EOF'
-          import java.awt.Graphics2D;
           import java.awt.image.BufferedImage;
           import java.io.File;
           import java.util.Iterator;
@@ -167,29 +163,49 @@ jobs:
           import javax.imageio.stream.ImageOutputStream;
           
           public class PatchSettings {
+            static int average(BufferedImage img, int x1, int x2, int y) {
+              long r=0,g=0,b=0; int n=0;
+              for (int x=x1; x<=x2; x++) {
+                int c=img.getRGB(x,y);
+                r+=(c>>16)&255; g+=(c>>8)&255; b+=c&255; n++;
+              }
+              return (255<<24)|(((int)(r/n))<<16)|(((int)(g/n))<<8)|((int)(b/n));
+            }
+            static int mix(int a,int b,double t) {
+              int ar=(a>>16)&255, ag=(a>>8)&255, ab=a&255;
+              int br=(b>>16)&255, bg=(b>>8)&255, bb=b&255;
+              int r=(int)Math.round(ar+(br-ar)*t);
+              int g=(int)Math.round(ag+(bg-ag)*t);
+              int bl=(int)Math.round(ab+(bb-ab)*t);
+              return (255<<24)|(r<<16)|(g<<8)|bl;
+            }
             public static void main(String[] args) throws Exception {
-              BufferedImage base = ImageIO.read(new File(args[0]));
-              BufferedImage patch = ImageIO.read(new File(args[1]));
-              if (base.getWidth()!=864 || base.getHeight()!=1536) throw new IllegalStateException("Unexpected settings artwork size");
-              Graphics2D g = base.createGraphics();
-              g.drawImage(patch, 555, 1005, null);
-              g.dispose();
-              Iterator<ImageWriter> it = ImageIO.getImageWritersByFormatName("jpeg");
-              ImageWriter writer = it.next();
-              ImageWriteParam param = writer.getDefaultWriteParam();
+              File f=new File(args[0]);
+              BufferedImage img=ImageIO.read(f);
+              if (img.getWidth()!=864 || img.getHeight()!=1536)
+                throw new IllegalStateException("Unexpected settings artwork size");
+              for (int y=1005; y<1045; y++) {
+                int left=average(img,548,554,y);
+                int right=average(img,691,699,y);
+                for (int x=555; x<=690; x++) {
+                  double t=(x-555)/135.0;
+                  img.setRGB(x,y,mix(left,right,t));
+                }
+              }
+              Iterator<ImageWriter> it=ImageIO.getImageWritersByFormatName("jpeg");
+              ImageWriter writer=it.next();
+              ImageWriteParam param=writer.getDefaultWriteParam();
               param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
               param.setCompressionQuality(0.95f);
-              try (ImageOutputStream out = ImageIO.createImageOutputStream(new File(args[0]))) {
+              try(ImageOutputStream out=ImageIO.createImageOutputStream(f)){
                 writer.setOutput(out);
-                writer.write(null, new IIOImage(base, null, null), param);
-              } finally {
-                writer.dispose();
-              }
+                writer.write(null,new IIOImage(img,null,null),param);
+              } finally { writer.dispose(); }
             }
           }
           JAVA_EOF
           javac "$RUNNER_TEMP/PatchSettings.java"
-          java -cp "$RUNNER_TEMP" PatchSettings app/src/main/res/drawable-nodpi/tcc_settings.jpg "$RUNNER_TEMP/lang_patch.png"
+          java -cp "$RUNNER_TEMP" PatchSettings app/src/main/res/drawable-nodpi/tcc_settings.jpg
 
       - name: Source QA
         shell: bash
