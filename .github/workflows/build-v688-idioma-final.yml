@@ -220,46 +220,41 @@ jobs:
           grep -F 's.languageIndex=pick;s.save(getContext());languageMenuOpen=false;' app/src/main/java/com/caeless/monstrinhos/MonstrinhosView.java
           grep -F 'String[] names={"Português","English","Español"};' app/src/main/java/com/caeless/monstrinhos/MonstrinhosView.java
 
-      - name: Configure stable test signing
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "$HOME/.android"
-          rm -f "$HOME/.android/debug.keystore"
-          keytool -importkeystore -noprompt \
-            -srckeystore "$GITHUB_WORKSPACE/app/keystores/monstrinhos-test.jks" \
-            -srcstorepass 'monstrinhos-test-only-2026' \
-            -srcalias 'monstrinhos-test' \
-            -srckeypass 'monstrinhos-test-only-2026' \
-            -destkeystore "$HOME/.android/debug.keystore" \
-            -deststorepass 'android' \
-            -destkeypass 'android' \
-            -destalias 'androiddebugkey'
-
       - name: Build APK
         run: cd "$RUNNER_TEMP/mon" && gradle :app:assembleDebug --stacktrace
 
-      - name: Verify APK identity alignment signature and archive
+      - name: Verify APK identity align and sign with stable test key
         shell: bash
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/mon"
-          APK="$(find app/build/outputs/apk/debug -name '*.apk' -type f | head -n1)"
-          test -n "$APK"
+          RAW_APK="$(find app/build/outputs/apk/debug -name '*.apk' -type f | head -n1)"
+          test -n "$RAW_APK"
           BT="$ANDROID_HOME/build-tools/35.0.0"
           mkdir -p "$RUNNER_TEMP/out"
-          "$BT/aapt" dump badging "$APK" | tee "$RUNNER_TEMP/out/BADGING.txt"
+          FINAL_APK="$RUNNER_TEMP/out/Monstrinhos_v6.8.8_IDIOMA_UNICO.apk"
+          ALIGNED_APK="$RUNNER_TEMP/aligned-v688.apk"
+
+          "$BT/zipalign" -f -v 4 "$RAW_APK" "$ALIGNED_APK"
+          "$BT/apksigner" sign \
+            --ks "$GITHUB_WORKSPACE/app/keystores/monstrinhos-test.jks" \
+            --ks-key-alias 'monstrinhos-test' \
+            --ks-pass 'pass:monstrinhos-test-only-2026' \
+            --key-pass 'pass:monstrinhos-test-only-2026' \
+            --out "$FINAL_APK" "$ALIGNED_APK"
+
+          "$BT/aapt" dump badging "$FINAL_APK" | tee "$RUNNER_TEMP/out/BADGING.txt"
           grep -F "name='com.caeless.monstrinhos'" "$RUNNER_TEMP/out/BADGING.txt"
           grep -F "versionCode='6880'" "$RUNNER_TEMP/out/BADGING.txt"
           grep -F "versionName='6.8.8'" "$RUNNER_TEMP/out/BADGING.txt"
           grep -F "application-label:'Monstrinhos TCC 6.8.8 IDIOMA ÚNICO'" "$RUNNER_TEMP/out/BADGING.txt"
           grep -F "targetSdkVersion:'36'" "$RUNNER_TEMP/out/BADGING.txt"
-          "$BT/zipalign" -c -v 4 "$APK" | tee "$RUNNER_TEMP/out/ZIPALIGN.txt"
-          "$BT/apksigner" verify --verbose --print-certs "$APK" | tee "$RUNNER_TEMP/out/SIGNATURE.txt"
+
+          "$BT/zipalign" -c -v 4 "$FINAL_APK" | tee "$RUNNER_TEMP/out/ZIPALIGN.txt"
+          "$BT/apksigner" verify --verbose --print-certs "$FINAL_APK" | tee "$RUNNER_TEMP/out/SIGNATURE.txt"
           grep -F 'Signer #1 certificate SHA-256 digest: f562b57aa046dbb098922a6dc520f3ff8e1ad190d129c7e61a254588646ce514' "$RUNNER_TEMP/out/SIGNATURE.txt"
-          unzip -t "$APK" | tee "$RUNNER_TEMP/out/ZIPTEST.txt"
-          cp "$APK" "$RUNNER_TEMP/out/Monstrinhos_v6.8.8_IDIOMA_UNICO.apk"
-          sha256sum "$RUNNER_TEMP/out/Monstrinhos_v6.8.8_IDIOMA_UNICO.apk" > "$RUNNER_TEMP/out/SHA256SUMS.txt"
+          unzip -t "$FINAL_APK" | tee "$RUNNER_TEMP/out/ZIPTEST.txt"
+          sha256sum "$FINAL_APK" > "$RUNNER_TEMP/out/SHA256SUMS.txt"
 
       - name: Export consolidated source
         shell: bash
