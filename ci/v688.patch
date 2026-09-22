@@ -1,0 +1,155 @@
+--- a/app/src/main/java/com/caeless/monstrinhos/MonstrinhosView.java
++++ b/app/src/main/java/com/caeless/monstrinhos/MonstrinhosView.java
+@@ -18,6 +18,7 @@
+     // 10 store, 11 tutorial/info, 12 eggs, 13 accessibility, 14 credits.
+     private int screen=0, selectedLevel=1, taps=0, misses=0, challengeScore=0;
+     private int activeTarget=0, selectedMonster=0, albumPage=0;
++    private boolean languageMenuOpen=false;
+     private String reaction="";
+     private long reactionUntil=0L;
+ 
+@@ -106,13 +107,32 @@
+         p.setShader(new LinearGradient(0,st,0,sb,0xFFE4A25D,0xFFC67C3D,Shader.TileMode.CLAMP));c.drawRoundRect(sl,st,sr,sb,(sb-st)*.42f,(sb-st)*.42f,p);p.setShader(null);
+         textFit(c,sub,w*.50f,h*.148f,13.8f,11.5f,w*.43f,0xFF5B3018);
+     }
+-    private void languagePill(Canvas c,String label,float l,float t,float r,float b){
+-        // Preserva a cápsula/ícone impressos na arte; cobre somente a palavra do idioma.
+-        float tl=l+(r-l)*.08f,tr=r-(r-l)*.26f,tt=t+(b-t)*.17f,tb=b-(b-t)*.16f;
+-        float rad=(tb-tt)*.38f;
+-        p.setShader(new LinearGradient(0,tt,0,tb,0xFFFFFBF1,0xFFFFEED7,Shader.TileMode.CLAMP));
+-        c.drawRoundRect(tl,tt,tr,tb,rad,rad,p);p.setShader(null);
+-        textFit(c,label,(tl+tr)/2,tt+(tb-tt)*.68f,16.5f,12.5f,(tr-tl)*.90f,0xFF6A351B);
++    private void languageValue(Canvas c,String label,float w,float h){
++        // A palavra "Português" está gravada na arte original. Em vez de desenhar outra
++        // cápsula por cima, copiamos somente uma faixa limpa do próprio preenchimento da
++        // cápsula e a esticamos sobre a área das letras. Borda, sombra e seta ficam intactas.
++        if(refSettings!=null){
++            Rect src=new Rect(682,1004,700,1052);
++            RectF dst=new RectF(w*.642f,h*.654f,w*.799f,h*.686f);
++            p.setAlpha(255);p.setStyle(Paint.Style.FILL);
++            c.drawBitmap(refSettings,src,dst,p);
++        }
++        float cx=w*.719f,base=h*.678f,maxW=w*.142f;
++        textFit(c,label,cx,base,Math.max(16.5f,h*.0163f),13.5f,maxW,0xFF6A351B);
++    }
++    private void drawLanguageMenu(Canvas c,float w,float h){
++        if(!languageMenuOpen)return;
++        float l=w*.535f,r=w*.905f,t=h*.695f,b=h*.865f;
++        woodPanel(c,l,t,r,b);
++        float il=l+w*.020f,ir=r-w*.020f;
++        float[] top={h*.710f,h*.758f,h*.806f};
++        String[] labels={"Português","English","Español"};
++        for(int i=0;i<3;i++){
++            float it=top[i],ib=it+h*.039f;
++            int fill=i==s.languageIndex?0xFFFFE3A4:0xFFFFF8EA;
++            round(c,il,it,ir,ib,(ib-it)*.42f,fill,0xFF9B6234,2);
++            text(c,(i==s.languageIndex?"✓  ":"")+labels[i],(il+ir)/2,it+(ib-it)*.66f,Math.max(13f,h*.0105f),0xFF6A351B);
++        }
+     }
+     private void woodTextPatch(Canvas c,String title,String sub,float w,float h){
+         // Traduz apenas as áreas de texto da placa, sem encobrir cordas, parafusos, bordas ou personagem.
+@@ -254,7 +274,7 @@
+         p.setColor(0x42FFFFFF);c.drawRoundRect(l+w*.025f,top+h*.004f,r-w*.025f,top+(bot-top)*.28f,rad*.55f,rad*.55f,p);
+         textFit(c,reaction,w*.50f,top+(bot-top)*.64f,17.5f,14f,(r-l)*.90f,0xFF65391E);
+     }
+-    private void drawVersion(Canvas c,float w,float h){text(c,"v6.8.7 UI",w*.91f,h*.988f,8,0xCCFFFFFF);}
++    private void drawVersion(Canvas c,float w,float h){text(c,"v6.8.8 UI",w*.91f,h*.988f,8,0xCCFFFFFF);}
+ 
+     private void settingSlot(Canvas c,float l,float t,float r,float b,int c1,int c2){
+         // Máscara opaca em degradê, combinando com a faixa original, para apagar completamente o switch/texto impresso.
+@@ -323,8 +343,9 @@
+         artToggle(c,w*.650f,h*.277f,w*.858f,h*.324f,s.soundOn==1);
+         artToggle(c,w*.650f,h*.368f,w*.858f,h*.415f,s.musicOn==1);
+         artToggle(c,w*.650f,h*.459f,w*.858f,h*.506f,s.vibrationOn==1);
+-        // O seletor mantém a própria cápsula original da arte; somente o texto é substituído.
+-        languagePill(c,s.languageName(),w*.625f,h*.641f,w*.872f,h*.694f);
++        // A cápsula permanece a original da arte: só a palavra interna é substituída.
++        languageValue(c,s.languageName(),w,h);
++        drawLanguageMenu(c,w,h);
+         drawReaction(c,w,h);drawVersion(c,w,h);
+     }
+     private void drawHatchOverlay(Canvas c,float w,float h){
+@@ -613,12 +634,27 @@
+                 if(y>h*.73f&&y<h*.86f){int theme=clamp((int)(x/(w*.25f)),0,3);react(s.selectOrBuyDecor(getContext(),theme)?tr("Tema: ","Theme: ","Tema: ")+localDecor():tr("Faltam moedas para esse tema.","Not enough coins for this theme.","Faltan monedas para este tema."));}
+                 break;
+             case 5:
++                if(languageMenuOpen){
++                    int lang=-1;
++                    if(x>w*.535f&&x<w*.905f){
++                        if(y>h*.702f&&y<h*.754f)lang=0;
++                        else if(y>h*.754f&&y<h*.802f)lang=1;
++                        else if(y>h*.802f&&y<h*.858f)lang=2;
++                    }
++                    languageMenuOpen=false;
++                    if(lang>=0){
++                        s.setLanguage(getContext(),lang);
++                        setContentDescription(tr("Monstrinhos. Jogo infantil com fases, coleção, ovos e casinha.","Monstrinhos. Children’s game with stages, collection, eggs and house.","Monstrinhos. Juego infantil con fases, colección, huevos y casita."));
++                        reaction="";reactionUntil=0L;
++                    }
++                    invalidate();return true;
++                }
+                 if(x<w*.25f&&y<h*.13f){screen=0;break;}
+                 if(y>h*.25f&&y<h*.35f){s.toggleSound(getContext());react(tr("Som ","Sound ","Sonido ")+(s.soundOn==1?onWord():offWord())+".");break;}
+                 if(y>h*.35f&&y<h*.44f){s.toggleMusic(getContext());react(tr("Música ","Music ","Música ")+(s.musicOn==1?onWord():offWord())+".");break;}
+                 if(y>h*.44f&&y<h*.53f){s.toggleVibration(getContext());react(tr("Vibração ","Vibration ","Vibración ")+(s.vibrationOn==1?onWord():offWord())+".");break;}
+                 if(y>h*.53f&&y<h*.63f){screen=13;break;}
+-                if(y>h*.63f&&y<h*.72f){s.cycleLanguage(getContext());setContentDescription(tr("Monstrinhos. Jogo infantil com fases, coleção, ovos e casinha.","Monstrinhos. Children’s game with stages, collection, eggs and house.","Monstrinhos. Juego infantil con fases, colección, huevos y casita."));reaction="";reactionUntil=0L;break;}
++                if(x>w*.60f&&x<w*.89f&&y>h*.63f&&y<h*.715f){languageMenuOpen=true;reaction="";reactionUntil=0L;break;}
+                 if(y>h*.72f&&y<h*.82f){screen=14;break;}
+                 break;
+             case 6:
+--- a/app/src/main/java/com/caeless/monstrinhos/GameState.java
++++ b/app/src/main/java/com/caeless/monstrinhos/GameState.java
+@@ -133,7 +133,8 @@
+ 
+     void toggleMusic(Context c){musicOn=musicOn==1?0:1;save(c);}
+     String languageName(){String[] n={"Português","English","Español"};return n[Math.max(0,Math.min(2,languageIndex))];}
+-    void cycleLanguage(Context c){languageIndex=(languageIndex+1)%3;save(c);}
++    void setLanguage(Context c,int index){languageIndex=Math.max(0,Math.min(2,index));save(c);}
++    void cycleLanguage(Context c){setLanguage(c,(languageIndex+1)%3);}
+     int albumRewardTarget(){int[] t={5,10,20,32,32};return t[Math.max(0,Math.min(4,albumRewardTier))];}
+     int albumRewardAmount(){int[] a={20,35,60,120,0};return a[Math.max(0,Math.min(4,albumRewardTier))];}
+     boolean claimAlbumReward(Context c){if(albumRewardTier>=4||collectionCount()<albumRewardTarget())return false;coins+=albumRewardAmount();if(albumRewardTier==1||albumRewardTier==2)eggs++;albumRewardTier++;save(c);return true;}
+--- a/app/build.gradle
++++ b/app/build.gradle
+@@ -7,7 +7,7 @@
+         applicationId 'com.caeless.monstrinhos'
+         minSdk 26
+         targetSdk 36
+-        versionCode 6870
+-        versionName '6.8.7'
++        versionCode 6880
++        versionName '6.8.8'
+     }
+ }
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -1,5 +1,5 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+-    <application android:theme="@style/AppTheme" android:label="Monstrinhos TCC 6.8.7 IDIOMA LIMPO" android:allowBackup="false" android:supportsRtl="true">
++    <application android:theme="@style/AppTheme" android:label="Monstrinhos TCC 6.8.8 IDIOMA FINAL" android:allowBackup="false" android:supportsRtl="true">
+         <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="true">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/>
+--- a/tools/verify_release.py
++++ b/tools/verify_release.py
+@@ -6,8 +6,8 @@
+ checks={
+ 'package':'com.caeless.monstrinhos' in text,
+ 'api36':'compileSdk 36' in text and 'targetSdk 36' in text,
+-'version':'versionCode 6870' in text and "versionName '6.8.7'" in text,
+-'label':'Monstrinhos TCC 6.8.7 IDIOMA LIMPO' in text,
++'version':'versionCode 6880' in text and "versionName '6.8.8'" in text,
++'label':'Monstrinhos TCC 6.8.8 IDIOMA FINAL' in text,
+ 'backup_disabled':'android:allowBackup="false"' in text,
+ 'save':'monstrinhos_save_v1' in text,
+ 'references':all(x in text for x in ['R.drawable.tcc_home','R.drawable.tcc_map','R.drawable.tcc_gameplay','R.drawable.tcc_album','R.drawable.tcc_house','R.drawable.tcc_settings','R.drawable.tcc_achievements','R.drawable.tcc_hatch']),
+@@ -16,7 +16,7 @@
+ 'functional_album':'setFavorite' in text and 'claimAlbumReward' in text,
+ 'functional_house':'careAtHouse' in text and 'upgradeHouse' in text and 'selectOrBuyDecor' in text,
+ 'functional_store':'buyEgg' in text and 'buyCarePack' in text,
+-'functional_settings':'toggleMusic' in text and 'cycleLanguage' in text and 'toggleVibration' in text and 'drawLocalizedSettings' in text,
++'functional_settings':'toggleMusic' in text and 'setLanguage' in text and 'toggleVibration' in text and 'drawLocalizedSettings' in text and 'drawLanguageMenu' in text,
+ 'challenge':'finishChallenge' in text and 'challengeScore' in text,
+ 'accessibility':'AccessibilityEvent' in text and 'toggleAccessibilityAnnouncements' in text and 'LARGE TEXT' in text and 'TEXTO GRANDE' in text,
+ 'portrait':'android:screenOrientation="portrait"' in text,
