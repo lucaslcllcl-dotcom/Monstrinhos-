@@ -33,11 +33,13 @@ jobs:
           base64 -d "$RUNNER_TEMP/base.b64" > "$RUNNER_TEMP/base.zip"
           mkdir -p "$RUNNER_TEMP/mon"
           unzip -q "$RUNNER_TEMP/base.zip" -d "$RUNNER_TEMP/mon"
-          for p in 681 682 683 684 685 686 687 688; do
+          for p in 681 682 683 684 685 686 687; do
             base64 -d "ci/patch${p}.b64" > "$RUNNER_TEMP/patch${p}.zip"
             unzip -oq "$RUNNER_TEMP/patch${p}.zip" -d "$RUNNER_TEMP/mon"
           done
           cd "$RUNNER_TEMP/mon"
+          patch -p1 < "$GITHUB_WORKSPACE/ci/v688.patch"
+          cp "$GITHUB_WORKSPACE/ci/v688.patch" V688_SOURCE_DIFF.patch
           python3 tools/verify_release.py
           ! grep -R -E 'Spinner|PopupWindow|Toast\.makeText|addView\(' app/src/main/java
           grep -F 'private boolean languageMenuOpen=false;' app/src/main/java/com/caeless/monstrinhos/MonstrinhosView.java
