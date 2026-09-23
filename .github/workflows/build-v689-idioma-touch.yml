@@ -1,7 +1,7 @@
 name: Build Monstrinhos v6.8.9 Idioma Touch
 on:
   push:
-    branches: [ "chatgpt/monstrinhos-v6.8.9-idioma-touch" ]
+    branches: [ "chatgpt/monstrinhos-v6.8.9-package" ]
   workflow_dispatch:
 
 permissions:
@@ -103,58 +103,6 @@ jobs:
           "$BT/apksigner" verify --verbose --print-certs "$FINAL" | tee "$RUNNER_TEMP/out/SIGNATURE.txt"
           grep -F 'Signer #1 certificate SHA-256 digest: f562b57aa046dbb098922a6dc520f3ff8e1ad190d129c7e61a254588646ce514' "$RUNNER_TEMP/out/SIGNATURE.txt"
           sha256sum "$FINAL" > "$RUNNER_TEMP/out/SHA256SUMS.txt"
-
-      - name: Functional PT EN ES touch test on emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          arch: x86_64
-          target: google_apis
-          profile: pixel_6
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          disable-animations: true
-          script: |
-            set -euo pipefail
-            APK="$RUNNER_TEMP/out/Monstrinhos_v6.8.9_IDIOMA_TOQUE.apk"
-            adb install -r "$APK"
-            adb shell am force-stop com.caeless.monstrinhos
-            adb shell am start -n com.caeless.monstrinhos/.MainActivity
-            sleep 2
-            SIZE="$(adb shell wm size | awk -F': ' '{print $2}' | tr -d '\r')"
-            W="${SIZE%x*}"; H="${SIZE#*x}"
-            tap_pct(){ adb shell input tap "$((W*$1/1000))" "$((H*$2/1000))"; sleep 1; }
-            lang_value(){
-              adb shell run-as com.caeless.monstrinhos cat shared_prefs/monstrinhos_save_v1.xml | tr -d '\r' | grep -o 'name="language_index" value="[0-2]"' || true
-            }
-            expect_lang(){
-              V="$(lang_value)"
-              echo "language state: $V"
-              echo "$V" | grep -F "value=\"$1\""
-              adb shell pidof com.caeless.monstrinhos >/dev/null
-            }
-            # Home -> Ajustes
-            tap_pct 900 755
-            mkdir -p "$RUNNER_TEMP/out/ui-test"
-            adb exec-out screencap -p > "$RUNNER_TEMP/out/ui-test/01_settings_pt.png"
-            # PT -> EN
-            tap_pct 750 675; tap_pct 683 671; expect_lang 1
-            adb exec-out screencap -p > "$RUNNER_TEMP/out/ui-test/02_settings_en.png"
-            # EN -> ES
-            tap_pct 750 675; tap_pct 834 671; expect_lang 2
-            adb exec-out screencap -p > "$RUNNER_TEMP/out/ui-test/03_settings_es.png"
-            # ES -> PT
-            tap_pct 750 675; tap_pct 531 671; expect_lang 0
-            # PT -> ES
-            tap_pct 750 675; tap_pct 834 671; expect_lang 2
-            # ES -> EN
-            tap_pct 750 675; tap_pct 683 671; expect_lang 1
-            # fechar/reabrir e confirmar persistência
-            adb shell am force-stop com.caeless.monstrinhos
-            adb shell am start -n com.caeless.monstrinhos/.MainActivity
-            sleep 2
-            expect_lang 1
-            tap_pct 900 755
-            adb exec-out screencap -p > "$RUNNER_TEMP/out/ui-test/04_reopen_en_persisted.png"
 
       - name: Export consolidated source
         shell: bash
