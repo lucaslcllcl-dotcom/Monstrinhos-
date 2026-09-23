@@ -1,0 +1,286 @@
+name: Build Monstrinhos v6.8.9 Idioma Touch
+on:
+  push:
+    branches: [ "chatgpt/monstrinhos-v6.8.9-idioma-touch" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: ''
+      - name: Install Android SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platform-tools' 'platforms;android-36' 'build-tools;35.0.0' 'emulator' 'system-images;android-35;google_apis;x86_64'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Restore tested v6.8.8 source artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/v688-artifact" "$RUNNER_TEMP/mon"
+          gh run download 35773642567 -R "${{ github.repository }}" -n Monstrinhos-v6.8.8-IDIOMA-UNICO -D "$RUNNER_TEMP/v688-artifact"
+          unzip -q "$RUNNER_TEMP/v688-artifact/Monstrinhos_v6.8.8_IDIOMA_UNICO_source.zip" -d "$RUNNER_TEMP/mon"
+
+      - name: Apply v6.8.9 language touch fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/mon"
+          python3 - <<'PY'
+          from pathlib import Path
+          def one(path, old, new):
+              p=Path(path); s=p.read_text(encoding='utf-8')
+              if s.count(old)!=1:
+                  raise SystemExit(f'{path}: expected one match for patch')
+              p.write_text(s.replace(old,new,1),encoding='utf-8')
+
+          one('app/build.gradle',
+          """        versionCode 6880
+                  versionName '6.8.8'""",
+          """        versionCode 6890
+                  versionName '6.8.9'""")
+
+          one('app/src/main/AndroidManifest.xml',
+              'android:label="Monstrinhos TCC 6.8.8 IDIOMA ÚNICO"',
+              'android:label="Monstrinhos TCC 6.8.9 IDIOMA TOQUE CORRIGIDO"')
+
+          view='app/src/main/java/com/caeless/monstrinhos/MonstrinhosView.java'
+          one(view,
+          """    private void drawLanguageMenu(Canvas c,float w,float h){
+                  if(!languageMenuOpen)return;
+                  // Seletor temático desenhado no mesmo Canvas: nenhuma View/Spinner/PopupWindow Android é criada.
+                  float l=w*.555f,r=w*.895f,t=h*.565f,b=h*.635f,rad=h*.018f;
+                  p.setShader(new LinearGradient(0,t,0,b,0xFFFFF6DF,0xFFFFDDA8,Shader.TileMode.CLAMP));
+                  c.drawRoundRect(l,t,r,b,rad,rad,p);p.setShader(null);
+                  p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.4f);p.setColor(0xFFB45A35);c.drawRoundRect(l,t,r,b,rad,rad,p);p.setStyle(Paint.Style.FILL);
+                  String[] names={"Português","English","Español"};
+                  float row=(b-t)/3f;
+                  for(int i=0;i<3;i++){
+                      if(i==s.languageIndex){p.setColor(0x33E75A6A);c.drawRoundRect(l+4,t+i*row+2,r-4,t+(i+1)*row-2,rad*.45f,rad*.45f,p);}
+                      textFit(c,names[i],(l+r)/2,t+(i+.69f)*row,14.5f,11.5f,(r-l)*.84f,0xFF6A351B);
+                      if(i<2){p.setColor(0x55B45A35);c.drawRect(l+w*.025f,t+(i+1)*row,r-w*.025f,t+(i+1)*row+1,p);}
+                  }
+              }""",
+          """    private void drawLanguageMenu(Canvas c,float w,float h){
+                  if(!languageMenuOpen)return;
+                  // v6.8.9: seletor horizontal dentro da própria faixa de Idioma.
+                  // Não invade Acessibilidade nem Créditos e não cria View/Spinner/PopupWindow Android.
+                  float l=w*.455f,r=w*.910f,t=h*.642f,b=h*.700f,rad=h*.014f;
+                  p.setShader(new LinearGradient(0,t,0,b,0xFFFFF8E8,0xFFFFE4B8,Shader.TileMode.CLAMP));
+                  c.drawRoundRect(l,t,r,b,rad,rad,p);p.setShader(null);
+                  p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2.2f);p.setColor(0xFFB45A35);c.drawRoundRect(l,t,r,b,rad,rad,p);p.setStyle(Paint.Style.FILL);
+                  String[] names={"Português","English","Español"};
+                  float col=(r-l)/3f;
+                  for(int i=0;i<3;i++){
+                      float cl=l+i*col,cr=cl+col;
+                      if(i==s.languageIndex){p.setColor(0x33E75A6A);c.drawRoundRect(cl+3,t+3,cr-3,b-3,rad*.55f,rad*.55f,p);}
+                      textFit(c,names[i],(cl+cr)/2,t+(b-t)*.64f,12.8f,9.8f,col*.90f,0xFF6A351B);
+                      if(i<2){p.setColor(0x55B45A35);c.drawRect(cr,t+h*.008f,cr+1,b-h*.008f,p);}
+                  }
+              }""")
+
+          one(view,'text(c,"v6.8.8 UI",w*.91f,h*.988f,8,0xCCFFFFFF);',
+                   'text(c,"v6.8.9 UI",w*.91f,h*.988f,8,0xCCFFFFFF);')
+          one(view,
+              'tr("Versão funcional 6.8.8","Functional version 6.8.8","Versión funcional 6.8.8")',
+              'tr("Versão funcional 6.8.9","Functional version 6.8.9","Versión funcional 6.8.9")')
+
+          one(view,
+          """            case 5:
+                  if(x<w*.25f&&y<h*.13f){screen=0;break;}
+                  if(y>h*.25f&&y<h*.35f){s.toggleSound(getContext());react(tr("Som ","Sound ","Sonido ")+(s.soundOn==1?onWord():offWord())+".");break;}
+                  if(y>h*.35f&&y<h*.44f){s.toggleMusic(getContext());react(tr("Música ","Music ","Música ")+(s.musicOn==1?onWord():offWord())+".");break;}
+                  if(y>h*.44f&&y<h*.53f){s.toggleVibration(getContext());react(tr("Vibração ","Vibration ","Vibración ")+(s.vibrationOn==1?onWord():offWord())+".");break;}
+                  if(y>h*.53f&&y<h*.63f){screen=13;break;}
+                  if(languageMenuOpen){
+                      if(x>w*.555f&&x<w*.895f&&y>h*.565f&&y<h*.635f){
+                          int pick=clamp((int)((y-h*.565f)/(h*.070f/3f)),0,2);
+                          s.languageIndex=pick;s.save(getContext());languageMenuOpen=false;
+                          setContentDescription(tr("Monstrinhos. Jogo infantil com fases, coleção, ovos e casinha.","Monstrinhos. Children’s game with stages, collection, eggs and house.","Monstrinhos. Juego infantil con fases, colección, huevos y casita."));
+                          reaction="";reactionUntil=0L;invalidate();break;
+                      }
+                      languageMenuOpen=false;invalidate();break;
+                  }
+                  if(y>h*.63f&&y<h*.72f){languageMenuOpen=true;reaction="";reactionUntil=0L;invalidate();break;}
+                  if(y>h*.72f&&y<h*.82f){screen=14;break;}
+                  break;""",
+          """            case 5:
+                  // v6.8.9: menu aberto recebe prioridade absoluta sobre os controles ao fundo.
+                  if(languageMenuOpen){
+                      if(x>w*.455f&&x<w*.910f&&y>h*.642f&&y<h*.700f){
+                          float col=w*(.910f-.455f)/3f;
+                          int pick=clamp((int)((x-w*.455f)/col),0,2);
+                          s.languageIndex=pick;s.save(getContext());languageMenuOpen=false;
+                          setContentDescription(tr("Monstrinhos. Jogo infantil com fases, coleção, ovos e casinha.","Monstrinhos. Children’s game with stages, collection, eggs and house.","Monstrinhos. Juego infantil con fases, colección, huevos y casita."));
+                          reaction="";reactionUntil=0L;invalidate();break;
+                      }
+                      languageMenuOpen=false;reaction="";reactionUntil=0L;invalidate();break;
+                  }
+                  if(x<w*.25f&&y<h*.13f){screen=0;break;}
+                  if(y>h*.25f&&y<h*.35f){s.toggleSound(getContext());react(tr("Som ","Sound ","Sonido ")+(s.soundOn==1?onWord():offWord())+".");break;}
+                  if(y>h*.35f&&y<h*.44f){s.toggleMusic(getContext());react(tr("Música ","Music ","Música ")+(s.musicOn==1?onWord():offWord())+".");break;}
+                  if(y>h*.44f&&y<h*.53f){s.toggleVibration(getContext());react(tr("Vibração ","Vibration ","Vibración ")+(s.vibrationOn==1?onWord():offWord())+".");break;}
+                  if(y>h*.53f&&y<h*.63f){screen=13;break;}
+                  if(y>h*.63f&&y<h*.72f){languageMenuOpen=true;reaction="";reactionUntil=0L;invalidate();break;}
+                  if(y>h*.72f&&y<h*.82f){screen=14;break;}
+                  break;""")
+
+          vr='tools/verify_release.py'
+          p=Path(vr); s=p.read_text(encoding='utf-8')
+          s=s.replace("versionCode 6880' in text and \"versionName '6.8.8'\"",
+                      "versionCode 6890' in text and \"versionName '6.8.9'\"")
+          s=s.replace('Monstrinhos TCC 6.8.8 IDIOMA ÚNICO',
+                      'Monstrinhos TCC 6.8.9 IDIOMA TOQUE CORRIGIDO')
+          p.write_text(s,encoding='utf-8')
+
+          Path('RELEASE_NOTES_v6.8.9_IDIOMA_TOQUE.md').write_text(
+          """# Monstrinhos v6.8.9 — Idioma Toque Corrigido
+
+          - Corrige conflito de toque entre Idioma e Acessibilidade.
+          - Seletor PT/EN/ES horizontal, contido na própria faixa Idioma.
+          - Menu aberto recebe prioridade de toque e bloqueia botões ao fundo.
+          - Mantém package, targetSdk 36 e save existente.
+          - Nenhuma alteração de gameplay nesta versão.
+          """,encoding='utf-8')
+          PY
+
+      - name: Regression QA for language selector
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/mon"
+          python3 tools/verify_release.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('app/src/main/java/com/caeless/monstrinhos/MonstrinhosView.java').read_text()
+          case=s[s.index('            case 5:'):s.index('            case 6:')]
+          assert case.index('if(languageMenuOpen)') < case.index('screen=13')
+          assert 'x>w*.455f&&x<w*.910f&&y>h*.642f&&y<h*.700f' in case
+          assert 'float col=w*(.910f-.455f)/3f;' in case
+          assert 'int pick=clamp((int)((x-w*.455f)/col),0,2);' in case
+          assert 's.languageIndex=pick;s.save(getContext());languageMenuOpen=false;' in case
+          assert '.565f' not in case and '.635f' not in case
+          # geometric regression: menu is inside Idioma row (.63-.72) and cannot overlap Acessibilidade (<.63) or Créditos (>.72)
+          t,b=.642,.700
+          assert t>.63 and b<.72
+          gs=Path('app/src/main/java/com/caeless/monstrinhos/GameState.java').read_text()
+          assert 'putInt("language_index",languageIndex)' in gs
+          assert 'p.getInt("language_index",0)' in gs
+          print('OK language touch priority, non-overlap, selection and persistence wiring')
+          PY
+          ! grep -R -E 'Spinner|PopupWindow|Toast\.makeText|addView\(' app/src/main/java
+
+      - name: Build APK
+        run: cd "$RUNNER_TEMP/mon" && gradle :app:assembleDebug --stacktrace
+
+      - name: Align sign and verify APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/mon"
+          RAW_APK="$(find app/build/outputs/apk/debug -name '*.apk' -type f | head -n1)"
+          BT="$ANDROID_HOME/build-tools/35.0.0"
+          mkdir -p "$RUNNER_TEMP/out"
+          ALIGNED="$RUNNER_TEMP/Monstrinhos_v6.8.9_aligned.apk"
+          FINAL="$RUNNER_TEMP/out/Monstrinhos_v6.8.9_IDIOMA_TOQUE.apk"
+          "$BT/zipalign" -f -v 4 "$RAW_APK" "$ALIGNED"
+          "$BT/apksigner" sign \
+            --ks "$GITHUB_WORKSPACE/app/keystores/monstrinhos-test.jks" \
+            --ks-key-alias 'monstrinhos-test' \
+            --ks-pass 'pass:monstrinhos-test-only-2026' \
+            --key-pass 'pass:monstrinhos-test-only-2026' \
+            --out "$FINAL" "$ALIGNED"
+          "$BT/aapt" dump badging "$FINAL" | tee "$RUNNER_TEMP/out/BADGING.txt"
+          grep -F "name='com.caeless.monstrinhos'" "$RUNNER_TEMP/out/BADGING.txt"
+          grep -F "versionCode='6890'" "$RUNNER_TEMP/out/BADGING.txt"
+          grep -F "versionName='6.8.9'" "$RUNNER_TEMP/out/BADGING.txt"
+          grep -F "targetSdkVersion:'36'" "$RUNNER_TEMP/out/BADGING.txt"
+          "$BT/zipalign" -c -v 4 "$FINAL" > "$RUNNER_TEMP/out/ZIPALIGN.txt"
+          "$BT/apksigner" verify --verbose --print-certs "$FINAL" | tee "$RUNNER_TEMP/out/SIGNATURE.txt"
+          grep -F 'Signer #1 certificate SHA-256 digest: f562b57aa046dbb098922a6dc520f3ff8e1ad190d129c7e61a254588646ce514' "$RUNNER_TEMP/out/SIGNATURE.txt"
+          sha256sum "$FINAL" > "$RUNNER_TEMP/out/SHA256SUMS.txt"
+
+      - name: Functional PT EN ES touch test on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            set -euo pipefail
+            APK="$RUNNER_TEMP/out/Monstrinhos_v6.8.9_IDIOMA_TOQUE.apk"
+            adb install -r "$APK"
+            adb shell am force-stop com.caeless.monstrinhos
+            adb shell am start -n com.caeless.monstrinhos/.MainActivity
+            sleep 2
+            SIZE="$(adb shell wm size | awk -F': ' '{print $2}' | tr -d '\r')"
+            W="${SIZE%x*}"; H="${SIZE#*x}"
+            tap_pct(){ adb shell input tap "$((W*$1/1000))" "$((H*$2/1000))"; sleep 1; }
+            lang_value(){
+              adb shell run-as com.caeless.monstrinhos cat shared_prefs/monstrinhos_save_v1.xml | tr -d '\r' | grep -o 'name="language_index" value="[0-2]"' || true
+            }
+            expect_lang(){
+              V="$(lang_value)"
+              echo "language state: $V"
+              echo "$V" | grep -F "value=\"$1\""
+              adb shell pidof com.caeless.monstrinhos >/dev/null
+            }
+            # Home -> Ajustes
+            tap_pct 900 755
+            mkdir -p "$RUNNER_TEMP/out/ui-test"
+            adb exec-out screencap -p > "$RUNNER_TEMP/out/ui-test/01_settings_pt.png"
+            # PT -> EN
+            tap_pct 750 675; tap_pct 683 671; expect_lang 1
+            adb exec-out screencap -p > "$RUNNER_TEMP/out/ui-test/02_settings_en.png"
+            # EN -> ES
+            tap_pct 750 675; tap_pct 834 671; expect_lang 2
+            adb exec-out screencap -p > "$RUNNER_TEMP/out/ui-test/03_settings_es.png"
+            # ES -> PT
+            tap_pct 750 675; tap_pct 531 671; expect_lang 0
+            # PT -> ES
+            tap_pct 750 675; tap_pct 834 671; expect_lang 2
+            # ES -> EN
+            tap_pct 750 675; tap_pct 683 671; expect_lang 1
+            # fechar/reabrir e confirmar persistência
+            adb shell am force-stop com.caeless.monstrinhos
+            adb shell am start -n com.caeless.monstrinhos/.MainActivity
+            sleep 2
+            expect_lang 1
+            tap_pct 900 755
+            adb exec-out screencap -p > "$RUNNER_TEMP/out/ui-test/04_reopen_en_persisted.png"
+
+      - name: Export consolidated source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/mon"
+          zip -qr "$RUNNER_TEMP/out/Monstrinhos_v6.8.9_IDIOMA_TOQUE_source.zip" . -x 'app/build/*' '.gradle/*' 'build/*'
+          sha256sum "$RUNNER_TEMP/out/Monstrinhos_v6.8.9_IDIOMA_TOQUE_source.zip" >> "$RUNNER_TEMP/out/SHA256SUMS.txt"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Monstrinhos-v6.8.9-IDIOMA-TOQUE
+          path: ${{ runner.temp }}/out/*
+          retention-days: 7
