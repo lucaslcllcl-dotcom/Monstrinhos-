@@ -171,7 +171,9 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           s=Path('app/src/main/java/com/caeless/monstrinhos/MonstrinhosView.java').read_text()
-          case=s[s.index('            case 5:'):s.index('            case 6:')]
+          start=s.rindex('            case 5:')
+          end=s.index('            case 6:',start)
+          case=s[start:end]
           assert case.index('if(languageMenuOpen)') < case.index('screen=13')
           assert 'x>w*.455f&&x<w*.910f&&y>h*.642f&&y<h*.700f' in case
           assert 'float col=w*(.910f-.455f)/3f;' in case
